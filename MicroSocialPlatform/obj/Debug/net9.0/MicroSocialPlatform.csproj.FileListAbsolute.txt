@@ -96,3 +96,4 @@ C:\Users\Diana\source\repos\MicroSocialPlatform\MicroSocialPlatform\obj\Debug\ne
 C:\Users\Diana\source\repos\MicroSocialPlatform\MicroSocialPlatform\obj\Debug\net9.0\MicroSocialPlatform.pdb
 C:\Users\Diana\source\repos\MicroSocialPlatform\MicroSocialPlatform\obj\Debug\net9.0\MicroSocialPlatform.genruntimeconfig.cache
 C:\Users\Diana\source\repos\MicroSocialPlatform\MicroSocialPlatform\obj\Debug\net9.0\ref\MicroSocialPlatform.dll
+C:\Users\Diana\source\repos\MicroSocialPlatform\MicroSocialPlatform\obj\Debug\net9.0\MicroSocialPlatform.sourcelink.json
