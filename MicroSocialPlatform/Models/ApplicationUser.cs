@@ -1,30 +1,41 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Hosting;
 using System.ComponentModel.DataAnnotations;
 
 namespace MicroSocialPlatform.Models
 {
     public class ApplicationUser : IdentityUser
     {
+        public bool IsPrivate { get; set; } = false;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+
         public string? ProfileImagePath { get; set; }
 
         [StringLength(100, ErrorMessage = "Max. 100 characters")]
         public string? Description { get; set; }
-
-        public bool IsPrivate { get; set; } = false;
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool isDeleted { get; set; } = false; // pentru soft delete
 
 
-        // // un user poate avea multiple postari, comentarii, reactii
-        // public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
-        // public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
-        // public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+        // 1–M
+        // un user poate avea multiple postari, comentarii, mesaje in grupuri
+        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+        public virtual ICollection<GroupMessage> GroupMessages { get; set; } = new List<GroupMessage>();
 
-        // // un user poate avea atat persoane care-l urmaresc cat si persoane pe care le urmareste
-        // public virtual ICollection<Follow> Followers { get; set; } = new List<Follow>();
-        // public virtual ICollection<Follow> Following { get; set; } = new List<Follow>();
+        // grupuri create (moderator)
+        public virtual ICollection<Group> OwnedGroups { get; set; } = new List<Group>();
 
-        // // un user poate sa faca parte din mai multe grupuri
-        // public virtual ICollection<Member> GroupMemberships { get; set; } = new List<Member>();
+        // M–N prin entități asociative
+        // un user poate sa faca parte din mai multe grupuri, si sa dea reactii la mai multe postari
+        public virtual ICollection<GroupMembership> GroupMemberships { get; set; } = new List<GroupMembership>();
+        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+
+        // follow system
+        // un user poate avea atat persoane care-l urmaresc cat si persoane pe care le urmareste
+        public virtual ICollection<Follow> Followers { get; set; } = new List<Follow>();
+        public virtual ICollection<Follow> Following { get; set; } = new List<Follow>();
+
     }
 }
