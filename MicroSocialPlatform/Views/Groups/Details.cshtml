@@ -1,0 +1,282 @@
+﻿@using System.Security.Claims
+@{
+    var group = ViewBag.Group as MicroSocialPlatform.Models.Group;
+    var myMembership = ViewBag.MyMembership as MicroSocialPlatform.Models.GroupMembership;
+    var members = ViewBag.Members as List<MicroSocialPlatform.Models.GroupMembership> ?? new List<MicroSocialPlatform.Models.GroupMembership>();
+    var pending = ViewBag.Pending as List<MicroSocialPlatform.Models.GroupMembership> ?? new List<MicroSocialPlatform.Models.GroupMembership>();
+    var messages = ViewBag.Messages as List<MicroSocialPlatform.Models.GroupMessage> ?? new List<MicroSocialPlatform.Models.GroupMessage>();
+
+    var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    bool isModerator = group.ModeratorId == myId;
+    bool isAcceptedMember = (myMembership != null && myMembership.Status == "Accepted");
+
+}
+
+<h2>Group details</h2>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card" style="width:100%;">
+            <div class="card-body d-flex justify-content-between flex-column">
+                <div>
+                    <p>
+                        <i class="bi bi-people"></i>
+                        <b>Group name:</b> @group.Name
+                    </p>
+
+                    <p>
+                        <i class="bi bi-card-text"></i>
+                        <b>Description:</b> @group.Description
+                    </p>
+
+                    <p>
+                        <i class="bi bi-person-badge"></i>
+                        <b>Moderator:</b> @group.Moderator?.UserName
+                    </p>
+
+                    <p>
+                        <i class="bi bi-calendar-event"></i>
+                        <b>Created:</b> @group.CreatedAt.ToLocalTime()
+                    </p>
+
+                    @if (myMembership != null)
+                    {
+                        <p>
+                            <i class="bi bi-info-circle"></i>
+                            <b>My status:</b> @myMembership.Status
+                        </p>
+                    }
+                </div>
+
+                <div class="d-flex flex-row justify-content-between align-items-center mt-3">
+                    <div>
+                        <a asp-action="Index" class="btn btn-sm btn-secondary">Back to groups</a>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        @* JOIN *@
+                        @if (myMembership == null)
+                        {
+                            <form asp-action="Join" method="post" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="groupId" value="@group.Id" />
+                                <button type="submit" class="btn btn-sm btn-primary">Join</button>
+                            </form>
+                        }
+                        else
+                        {
+                            @* LEAVE *@
+                            @if (!isModerator)
+                            {
+                                <form asp-action="Leave" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="groupId" value="@group.Id" />
+                                    <button type="submit" class="btn btn-sm btn-warning">Leave</button>
+                                </form>
+                            }
+                        }
+
+                        @* DELETE GROUP *@
+                        @if (isModerator)
+                        {
+                            <form asp-action="Delete" method="post" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@group.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Delete group</button>
+                            </form>
+                        }
+                        @* EDIT GROUP *@
+                        @if (isModerator)
+                        {
+                            <a asp-action="Edit" asp-route-id="@group.Id" class="btn btn-sm btn-success">Edit group</a>
+                        }
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    @* PENDING REQUESTS (doar moderator) *@
+    @if (isModerator)
+    {
+        <div class="col-12 col-lg-6 mb-4">
+            <div class="card" style="height:100%;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-person-plus"></i> Pending requests
+                    </h5>
+
+                    @if (!pending.Any())
+                    {
+                        <p class="text-muted mb-0">No pending requests.</p>
+                    }
+                    else
+                    {
+                        @foreach (var p in pending)
+                        {
+                            <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                                <div>
+                                    <i class="bi bi-person"></i>
+                                    @p.User?.UserName
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <form asp-action="Accept" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="groupId" value="@group.Id" />
+                                        <input type="hidden" name="membershipId" value="@p.Id" />
+                                        <button class="btn btn-sm btn-success">Accept</button>
+                                    </form>
+
+                                    <form asp-action="Reject" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="groupId" value="@group.Id" />
+                                        <input type="hidden" name="membershipId" value="@p.Id" />
+                                        <button class="btn btn-sm btn-outline-danger">Reject</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* MEMBERS *@
+    <div class="col-12 col-lg-6 mb-4">
+        <div class="card" style="height:100%;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-people"></i> Members
+                </h5>
+
+                @if (!members.Any())
+                {
+                    <p class="text-muted mb-0">No members yet.</p>
+                }
+                else
+                {
+                    @foreach (var m in members)
+                    {
+                        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                            <div>
+                                <i class="bi bi-person"></i>
+                                @m.User?.UserName
+                                @if (m.UserId == group.ModeratorId)
+                                {
+                                    <span class="badge bg-secondary ms-2">Moderator</span>
+                                }
+                            </div>
+
+                            @if (isModerator && m.UserId != group.ModeratorId)
+                            {
+                                <form asp-action="RemoveMember" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="groupId" value="@group.Id" />
+                                    <input type="hidden" name="membershipId" value="@m.Id" />
+                                    <button class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+
+    @* SEND MESSAGE *@
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-chat-dots"></i> Messages
+                </h5>
+
+                @if (myMembership != null && myMembership.Status == "Accepted")
+                {
+                    <form asp-controller="GroupMessages" asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="groupId" value="@group.Id" />
+
+                        <div class="mb-2">
+                            <textarea name="content" class="form-control" rows="3" placeholder="Write a message..."></textarea>
+                        </div>
+
+						<button class="btn btn-sm btn-primary mt-2">Send</button>
+                        @* <button class="btn btn-sm btn-primary">Send</button> *@
+                    </form>
+                    
+
+
+                    <hr />
+                }
+                else
+                {
+                    <p class="text-muted">
+                        You can send messages only after you are accepted in this group.
+                    </p>
+                    <hr />
+                }
+
+                @* LISTA MESAJE *@
+                @if (!messages.Any())
+                {
+                    <p class="text-muted mb-0">No messages yet.</p>
+                }
+                else
+                {
+                    @foreach (var msg in messages)
+                    {
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-person-circle"></i>
+                                    <b>@msg.User?.UserName</b>
+                                    <span class="text-muted"> • @msg.SentAt.ToLocalTime()</span>
+
+                                    @if (msg.UpdatedAt != null)
+                                    {
+                                        <span class="text-muted"> (edited)</span>
+                                    }
+                                </div>
+
+                                @if (isAcceptedMember && msg.UserId == myId)
+                                {
+                                    <div class="d-flex gap-2">
+                                        <a asp-controller="GroupMessages"
+                                           asp-action="Edit"
+                                           asp-route-id="@msg.Id"
+                                           class="btn btn-sm btn-success">
+                                            Edit
+                                        </a>
+
+                                        <form asp-controller="GroupMessages" asp-action="Delete" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@msg.Id" />
+                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="mt-2">
+                                @msg.Content
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,23 @@
+﻿@model MicroSocialPlatform.Models.Group
+
+<h2>Create group</h2>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+
+<form asp-action="Create" asp-controller="Groups" method="post">
+    @Html.AntiForgeryToken()
+
+    <label>Name</label>
+    <input asp-for="Name" />
+    <span asp-validation-for="Name"></span>
+
+    <br />
+
+    <label>Description</label>
+    <textarea asp-for="Description"></textarea>
+    <span asp-validation-for="Description"></span>
+
+    <br />
+    <button type="submit">Create</button>
+</form>

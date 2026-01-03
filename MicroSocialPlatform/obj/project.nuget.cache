@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "1/ogDe3/x3A=",
+  "dgSpecHash": "gqjid0ATpZA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Diana\\source\\repos\\Test\\DAWProject\\MicroSocialPlatform\\MicroSocialPlatform.csproj",
+  "projectFilePath": "C:\\Users\\Diana\\source\\repos\\MicroSocialPlatform\\MicroSocialPlatform\\MicroSocialPlatform.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Diana\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Diana\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
