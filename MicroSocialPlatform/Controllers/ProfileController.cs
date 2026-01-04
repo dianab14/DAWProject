@@ -33,6 +33,14 @@ public class ProfileController : Controller
 
         ViewBag.IsMyProfile = true;
 
+        var posts = await _db.Posts
+        .Include(p => p.User)
+        .Where(p => p.UserId == user.Id)
+        .OrderByDescending(p => p.CreatedAt)
+        .ToListAsync();
+
+        ViewBag.Posts = posts;
+
         return View(user);
     }
 
@@ -246,6 +254,16 @@ public class ProfileController : Controller
         }
 
         ViewBag.IsPrivateView = false;
+
+        // profil public sau e al meu -> incarc postari
+        var posts = await _db.Posts
+            .Include(p => p.User)
+            .Where(p => p.UserId == user.Id)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        ViewBag.Posts = posts;
+
         return View(user);
 
         /*

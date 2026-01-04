@@ -1,0 +1,107 @@
+﻿<h2>Create post</h2>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Text</label>
+        <textarea name="content" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Image (optional)</label>
+        <div class="d-flex gap-2">
+            <input id="imageInput" type="file" name="image" class="form-control"
+                   accept=".jpg,.jpeg,.png" />
+            <button id="clearImageBtn" type="button" class="btn btn-outline-secondary" disabled>
+                Remove
+            </button>
+        </div>
+        <small id="imageInfo" class="text-muted"></small>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Video (optional)</label>
+        <div class="d-flex gap-2">
+            <input id="videoInput" type="file" name="video" class="form-control"
+                   accept=".mp4,.webm,.mov" />
+            <button id="clearVideoBtn" type="button" class="btn btn-outline-secondary" disabled>
+                Remove
+            </button>
+        </div>
+        <small id="videoInfo" class="text-muted"></small>
+    </div>
+
+    <button class="btn btn-primary">Post</button>
+</form>
+
+<script>
+    const imageInput = document.getElementById("imageInput");
+    const videoInput = document.getElementById("videoInput");
+
+    const clearImageBtn = document.getElementById("clearImageBtn");
+    const clearVideoBtn = document.getElementById("clearVideoBtn");
+
+    const imageInfo = document.getElementById("imageInfo");
+    const videoInfo = document.getElementById("videoInfo");
+
+    function updateUi() {
+        const hasImage = imageInput.files && imageInput.files.length > 0;
+        const hasVideo = videoInput.files && videoInput.files.length > 0;
+
+        // regula: nu ambele
+        if (hasImage) {
+            videoInput.disabled = true;
+            clearImageBtn.disabled = false;
+            imageInfo.textContent = imageInput.files[0].name;
+        } else {
+            videoInput.disabled = false;
+            clearImageBtn.disabled = true;
+            imageInfo.textContent = "";
+        }
+
+        if (hasVideo) {
+            imageInput.disabled = true;
+            clearVideoBtn.disabled = false;
+            videoInfo.textContent = videoInput.files[0].name;
+        } else {
+            imageInput.disabled = false;
+            clearVideoBtn.disabled = true;
+            videoInfo.textContent = "";
+        }
+
+        // dacă nu e nimic selectat, ambele input-uri sunt active (setările de mai sus acoperă asta)
+    }
+
+    imageInput.addEventListener("change", () => {
+        // dacă selectezi imagine, ne asigurăm că video e gol (in caz de bug)
+        if (imageInput.files.length > 0) {
+            videoInput.value = "";
+            videoInfo.textContent = "";
+        }
+        updateUi();
+    });
+
+    videoInput.addEventListener("change", () => {
+        if (videoInput.files.length > 0) {
+            imageInput.value = "";
+            imageInfo.textContent = "";
+        }
+        updateUi();
+    });
+
+    clearImageBtn.addEventListener("click", () => {
+        imageInput.value = "";
+        updateUi();
+    });
+
+    clearVideoBtn.addEventListener("click", () => {
+        videoInput.value = "";
+        updateUi();
+    });
+
+    // init
+    updateUi();
+</script>

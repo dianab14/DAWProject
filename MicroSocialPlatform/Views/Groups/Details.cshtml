@@ -29,10 +29,16 @@
                         <b>Description:</b> @group.Description
                     </p>
 
+                    @{
+                        var modFullName = ((group.Moderator?.FirstName ?? "") + " " + (group.Moderator?.LastName ?? "")).Trim();
+                        var modDisplay = string.IsNullOrWhiteSpace(modFullName) ? "Unknown" : modFullName;
+                    }
+
                     <p>
                         <i class="bi bi-person-badge"></i>
-                        <b>Moderator:</b> @group.Moderator?.UserName
+                        <b>Moderator:</b> @modDisplay
                     </p>
+
 
                     <p>
                         <i class="bi bi-calendar-event"></i>
@@ -122,7 +128,12 @@
                             <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
                                 <div>
                                     <i class="bi bi-person"></i>
-                                    @p.User?.UserName
+                                    @{
+                                        var pFullName = ((p.User?.FirstName ?? "") + " " + (p.User?.LastName ?? "")).Trim();
+                                        var pDisplay = string.IsNullOrWhiteSpace(pFullName) ? "Unknown" : pFullName;
+                                    }
+                                    @pDisplay
+
                                 </div>
 
                                 <div class="d-flex gap-2">
@@ -167,7 +178,12 @@
                         <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
                             <div>
                                 <i class="bi bi-person"></i>
-                                @m.User?.UserName
+                                @{
+                                    var mFullName = ((m.User?.FirstName ?? "") + " " + (m.User?.LastName ?? "")).Trim();
+                                    var mDisplay = string.IsNullOrWhiteSpace(mFullName) ? "Unknown" : mFullName;
+                                }
+                                @mDisplay
+
                                 @if (m.UserId == group.ModeratorId)
                                 {
                                     <span class="badge bg-secondary ms-2">Moderator</span>
@@ -241,7 +257,12 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class="bi bi-person-circle"></i>
-                                    <b>@msg.User?.UserName</b>
+                                    @{
+                                        var msgFullName = ((msg.User?.FirstName ?? "") + " " + (msg.User?.LastName ?? "")).Trim();
+                                        var msgDisplay = string.IsNullOrWhiteSpace(msgFullName) ? "Unknown" : msgFullName;
+                                    }
+                                    <b>@msgDisplay</b>
+
                                     <span class="text-muted"> • @msg.SentAt.ToLocalTime()</span>
 
                                     @if (msg.UpdatedAt != null)

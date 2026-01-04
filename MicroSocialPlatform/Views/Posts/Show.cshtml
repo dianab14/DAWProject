@@ -1,0 +1,166 @@
+﻿@using System.Security.Claims
+@{
+    var post = ViewBag.Post as MicroSocialPlatform.Models.Post;
+    var comments = ViewBag.Comments as List<MicroSocialPlatform.Models.Comment> ?? new();
+    var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    bool isOwner = User.Identity.IsAuthenticated && post.UserId == myId;
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
+
+            <!-- POST -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            @{
+                                var fullName = (post.User?.FirstName + " " + post.User?.LastName).Trim();
+                                var email = post.User?.Email;
+                                var displayName = string.IsNullOrWhiteSpace(fullName) ? (post.User?.UserName ?? "Unknown") : fullName;
+                            }
+
+                            <b>@displayName</b>
+                            <div class="text-muted" style="font-size:0.9rem;">
+                                @post.CreatedAt.ToLocalTime()
+                                @if (post.UpdatedAt != null)
+                                {
+                                    <span> • edited</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (isOwner)
+                        {
+                            <div class="d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-success">Edit</a>
+
+                                <form asp-action="Delete" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@post.Id" />
+                                    <button class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(post.Content))
+                    {
+                        <p class="mb-3">@post.Content</p>
+                    }
+
+                    @if (!string.IsNullOrEmpty(post.ImagePath))
+                    {
+                        <div class="mb-3">
+                            <img src="@post.ImagePath"
+                                 class="img-fluid rounded"
+                                 style="width:100%; object-fit:cover;" />
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(post.VideoPath))
+                    {
+                        <div class="mb-3">
+                            <video controls class="w-100 rounded">
+                                <source src="@post.VideoPath" />
+                            </video>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-start">
+                        <a asp-action="Index" asp-controller="Posts" class="btn btn-sm btn-secondary">Back</a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ADD COMMENT -->
+            @if (User.Identity.IsAuthenticated)
+            {
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Add comment</h5>
+
+                        <form asp-controller="Comments" asp-action="Create" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="postId" value="@post.Id" />
+
+                            <textarea name="content" class="form-control" rows="2"
+                                  placeholder="Write a comment..."></textarea>
+
+                            <div class="d-flex justify-content-end mt-2">
+                                <button class="btn btn-primary">Comment</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            <!-- COMMENTS -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Comments (newest first)</h5>
+
+                    @if (!comments.Any())
+                    {
+                        <p class="text-muted mb-0">No comments yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var c in comments)
+                        {
+                            bool commentOwner = User.Identity.IsAuthenticated && c.UserId == myId;
+
+                            <div class="border rounded p-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        @{
+                                            var cFullName = (c.User?.FirstName + " " + c.User?.LastName).Trim();
+                                            var cEmail = c.User?.Email;
+                                            var cDisplayName = string.IsNullOrWhiteSpace(cFullName) ? (c.User?.UserName ?? "Unknown") : cFullName;
+                                        }
+
+                                        <b>@cDisplayName</b>
+                                        <div class="text-muted" style="font-size:0.9rem;">
+                                            @c.CreatedAt.ToLocalTime()
+                                            @if (c.UpdatedAt != null)
+                                            {
+                                                <span> • edited</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (commentOwner)
+                                    {
+                                        <div class="d-flex gap-2">
+                                            <a asp-controller="Comments"
+                                               asp-action="Edit"
+                                               asp-route-id="@c.Id"
+                                               class="btn btn-sm btn-success">
+                                                Edit
+                                            </a>
+
+                                            <form asp-controller="Comments"
+                                                  asp-action="Delete"
+                                                  method="post"
+                                                  class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@c.Id" />
+                                                <button class="btn btn-sm btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="mt-2">@c.Content</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

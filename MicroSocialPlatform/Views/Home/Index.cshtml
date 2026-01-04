@@ -1,4 +1,5 @@
-﻿@{
+﻿@model List<MicroSocialPlatform.Models.Post>
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -17,4 +18,66 @@
     {
         <span class="badge bg-primary">User</span>
     }
+</div>
+
+<br />
+
+<!-- POSTS FEED -->
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
+
+            @foreach (var p in Model)
+            {
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+
+                        @{
+                            var fullName = (p.User?.FirstName + " " + p.User?.LastName).Trim();
+                            var displayName = string.IsNullOrWhiteSpace(fullName) ? (p.User?.UserName ?? "Unknown") : fullName;
+                            
+                        }
+
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <b>@displayName</b>
+                                
+                                <div class="text-muted" style="font-size:0.9rem;">
+                                    @p.CreatedAt.ToLocalTime()
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(p.Content))
+                        {
+                            <p class="mb-3">@p.Content</p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(p.ImagePath))
+                        {
+                            <div class="mb-3">
+                                <img src="@p.ImagePath" class="img-fluid rounded" style="width:100%; object-fit:cover;" />
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(p.VideoPath))
+                        {
+                            <div class="mb-3">
+                                <video controls class="w-100 rounded">
+                                    <source src="@p.VideoPath" />
+                                </video>
+                            </div>
+                        }
+
+                        <div class="d-flex justify-content-end">
+                            <a asp-controller="Posts" asp-action="Show" asp-route-id="@p.Id"
+                               class="btn btn-sm btn-outline-success">View</a>
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
 </div>
