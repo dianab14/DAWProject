@@ -10,15 +10,23 @@ namespace MicroSocialPlatform.Models
     {
         public bool IsPrivate { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
 
-        public string? ProfileImagePath { get; set; }
+        [Required]
+        [StringLength(50, ErrorMessage = "Max. 50 characters")]
+        public string FirstName { get; set; } = null!;
 
+        [Required]
+        [StringLength(50, ErrorMessage = "Max. 50 characters")]
+        public string LastName { get; set; } = null!;
+
+        [Required]
+        public string ProfileImagePath { get; set; } = "/images/profiles/default-profile.png";
+
+        [Required]
         [StringLength(100, ErrorMessage = "Max. 100 characters")]
-        public string? Description { get; set; }
-        public bool IsDeleted { get; set; } = false; // pentru soft delete
+        public string Description { get; set; } = "Hello, I am using MicroSocialPlatform! :)";
 
+        public bool IsDeleted { get; set; } = false; // pentru soft delete
 
         // 1–M
         // un user poate avea multiple postari, comentarii, mesaje in grupuri

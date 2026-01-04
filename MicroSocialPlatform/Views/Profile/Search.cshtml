@@ -1,0 +1,74 @@
+﻿@* Motorul de cautare *@
+<form method="GET">
+    <div class="input-group mb-3">
+        <input type="text"
+               class="form-control"
+               placeholder="Search users"
+               name="text"
+               value="@ViewBag.SearchString">
+        <button class="btn btn-outline-success" type="submit">
+            Search
+        </button>
+    </div>
+</form>
+
+@foreach (var user in ViewBag.Users)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5>@user.FirstName @user.LastName</h5>
+
+            <p>@user.Description</p>
+
+            <a class="btn btn-success"
+               asp-controller="Profile"
+               asp-action="Show"
+               asp-route-id="@user.Id">
+                Afisare profil
+            </a>
+
+            @if (user.IsPrivate)
+            {
+                <span class="badge bg-secondary ms-2">
+                    Profil privat
+                </span>
+            }
+        </div>
+    </div>
+
+    <br />
+    <br />
+}
+
+@* Afisare paginata *@
+<div>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+
+            <li class="page-item">
+                <a class="page-link"
+                   href="@ViewBag.PaginationBaseUrl=1">
+                    &laquo;
+                </a>
+            </li>
+
+            @for (int i = 1; i <= ViewBag.lastPage; i++)
+            {
+                <li class="page-item">
+                    <a class="page-link"
+                       href="@ViewBag.PaginationBaseUrl=@i">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <li class="page-item">
+                <a class="page-link"
+                   href="@ViewBag.PaginationBaseUrl=@ViewBag.lastPage">
+                    &raquo;
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+</div>
