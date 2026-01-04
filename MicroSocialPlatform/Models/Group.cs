@@ -9,6 +9,8 @@ namespace MicroSocialPlatform.Models
 
         [Required(ErrorMessage = "This group must have a name!")]
         public string Name { get; set; }
+
+        [Required(ErrorMessage = "This group must have a description!")]
         public string Description { get; set; }
 
         /// un group este creat de un user (moderator)
