@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MicroSocialPlatform.Migrations
 {
     /// <inheritdoc />
-    public partial class LittleRefactoring : Migration
+    public partial class CurrentState : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,6 +36,11 @@ namespace MicroSocialPlatform.Migrations
                 name: "Text",
                 table: "Comments",
                 newName: "Content");
+
+            migrationBuilder.RenameColumn(
+                name: "isDeleted",
+                table: "AspNetUsers",
+                newName: "IsDeleted");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "UpdatedAt",
@@ -157,6 +162,11 @@ namespace MicroSocialPlatform.Migrations
                 name: "Content",
                 table: "Comments",
                 newName: "Text");
+
+            migrationBuilder.RenameColumn(
+                name: "IsDeleted",
+                table: "AspNetUsers",
+                newName: "isDeleted");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Follows_FollowerId",

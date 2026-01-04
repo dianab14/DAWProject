@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MicroSocialPlatform.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260102233931_LittleRefactoring")]
-    partial class LittleRefactoring
+    [Migration("20260103143507_Group")]
+    partial class Group
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
