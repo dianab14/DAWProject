@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MicroSocialPlatform.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
 </head>
 <body>
     <header>
@@ -33,23 +35,30 @@
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark"
-                               asp-area=""
-                               asp-controller="Search"
-                               asp-action="Index">
-                                Search
-                            </a>
-                        </li>
-
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">Users</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Users" asp-action="Index">Users panel</a>
                             </li>
                         }
 
-                    </ul>
+                        <li>
+                            <form class="d-flex ms-3" method="GET" action="/Profile/Search">
+                                <input class="form-control me-2 border border-dark"
+                                       type="search"
+                                       name="text"
+                                       style="margin-left: 200px; width: 400px;"
+                                       placeholder="Search people"
+                                       value="@Context.Request.Query["text"]">
+
+                                <button class="btn btn-outline-success" type="submit">
+                                    Search
+                                </button>
+                            </form>
+                        </li>
+                        </ul>
+                        
+
                     <partial name="_LoginPartial" />
                 </div>
             </div>

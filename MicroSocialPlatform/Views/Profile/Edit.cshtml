@@ -1,0 +1,132 @@
+﻿@model MicroSocialPlatform.Models.ApplicationUser
+
+<h2 class="text-center mt-5">Edit profile</h2>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-3">
+
+            <form method="post" asp-action="Edit" asp-controller="Profile" enctype="multipart/form-data">
+
+                <div asp-validation-summary="All" class="text-danger"></div>
+
+                <!-- Profile Picture-->
+                <div class="mb-3">
+                    <img id="profilePreview"
+                         src="@Model.ProfileImagePath"
+                         class="rounded-circle mb-3"
+                         width="120"
+                         height="120" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Profile picture</label>
+                    <input type="file"
+                           name="ProfileImage"
+                           id="ProfileImage"
+                           class="form-control"
+                           accept="image/*" />
+
+                <input type="hidden" name="RemoveProfilePhoto" id="removePhotoFlag" value="false" />
+
+                @if (Model.ProfileImagePath != "/images/profiles/default-profile.png")
+                {
+
+                        <button type="button"
+                                class="btn btn-outline-danger btn-sm"
+                                onclick="removePhoto()">
+                            <i class="bi bi-trash"></i> Remove photo
+                        </button>
+                }
+                </div>
+
+                <br />
+
+                <!-- First Name -->
+                <div class="form-group">
+                    <label asp-for="FirstName" class="form-label">First Name</label>
+                    <br />
+                    <input asp-for="FirstName" class="form-control" />
+
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+
+                    <br /><br />
+                </div>
+
+                <!-- Last Name -->
+                <div class="form-group">
+                    <label asp-for="LastName" class="form-label">Last Name</label>
+                    <br />
+                    <input asp-for="LastName" class="form-control" />
+
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+
+                    <br /><br />
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label asp-for="Description" class="form-label">Description</label>
+                    <br />
+                    <textarea asp-for="Description" class="form-control"></textarea>
+
+                    <span asp-validation-for="Description" class="text-danger"></span>
+
+                    <br /><br />
+                </div>
+
+                <!-- Profile visibility -->
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsPrivate"
+                               class="form-check-input"
+                               type="checkbox"
+                               id="isPrivateSwitch" />
+
+                        <label class="form-check-label" for="isPrivateSwitch">
+                            <i class="bi bi-lock me-1"></i> Private account
+                        </label>
+                    </div>
+
+                    <small class="text-muted">
+                        When enabled, only approved followers can see your posts.
+                    </small>
+                </div>
+
+
+                <button class="btn btn-sm btn-success" type="submit">
+                    Save
+                </button>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById("profilePreview").src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removePhoto() {
+            // preview = default
+            document.getElementById("profilePreview").src =
+                "/images/profiles/default-profile.png";
+
+            // stergem fisierul selectat, daca era
+            document.getElementById("ProfileImage").value = "";
+
+            // spunem serverului ce vrem
+            document.getElementById("removePhotoFlag").value = "true";
+        }
+
+
+    </script>
+}

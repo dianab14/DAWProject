@@ -1,0 +1,21 @@
+﻿@model MicroSocialPlatform.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+@if (Model.IsDeleted)
+{
+    <h2>User not found</h2> 
+    return;
+} 
+
+<div class="card mx-auto" style="max-width: 1000px;">
+    <div class="card-body text-center">
+
+        <partial name="_ProfileSummary.cshtml" />
+
+    </div>
+</div>
+
+

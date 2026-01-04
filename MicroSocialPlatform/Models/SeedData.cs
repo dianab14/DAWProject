@@ -57,6 +57,9 @@ namespace MicroSocialPlatform.Models
                     EmailConfirmed = true,
                     NormalizedEmail = "ADMIN@TEST.COM",
                     Email = "admin@test.com",
+                    FirstName = "Admin", 
+                    LastName = "One",
+                    Description = "Delighted to be the first account registered on this platform!!❤️",
                     NormalizedUserName = "ADMIN@TEST.COM",
                     PasswordHash = hasher.HashPassword(null, "Admin1!")
                 },
@@ -69,6 +72,10 @@ namespace MicroSocialPlatform.Models
                     EmailConfirmed = true,
                     NormalizedEmail = "USER1@TEST.COM",
                     Email = "user1@test.com",
+                    FirstName = "User",
+                    LastName = "One",
+                    IsPrivate = true,
+                    Description = "Not accepting requests",
                     NormalizedUserName = "USER1@TEST.COM",
                     PasswordHash = hasher.HashPassword(null, "User1!")
                 },
@@ -81,6 +88,8 @@ namespace MicroSocialPlatform.Models
                     EmailConfirmed = true,
                     NormalizedEmail = "USER2@TEST.COM",
                     Email = "user2@test.com",
+                    FirstName = "User",
+                    LastName = "Two",
                     NormalizedUserName = "USER2@TEST.COM",
                     PasswordHash = hasher.HashPassword(null, "User2!")
                 }

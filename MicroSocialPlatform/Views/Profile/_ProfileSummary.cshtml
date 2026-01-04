@@ -1,0 +1,40 @@
+﻿<img src="@(Model.ProfileImagePath)"
+     class="rounded-circle mb-3"
+     width="120" height="120" />
+
+<h4>@Model.FirstName @Model.LastName</h4>
+@if (ViewBag.IsMyProfile)
+{
+    <p class="text-muted">@Model.Email</p>
+}
+
+<p>@Model.Description</p>
+
+<p class="mt-2">
+    @if (Model.IsPrivate)
+    {
+        <span class="text-danger">
+            <i class="bi bi-lock-fill"></i>
+            Private account
+        </span>
+    }
+    else
+    {
+        <span class="text-success">
+            <i class="bi bi-globe"></i>
+            Public account
+        </span>
+    }
+</p>
+
+
+<p class="text-muted">
+    Member since: @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+</p>
+
+@if (ViewBag.IsMyProfile)
+{
+    <a asp-action="Edit" class="btn btn-primary mt-3">
+        <i class="bi bi-pencil"></i> Edit profile
+    </a>
+}
