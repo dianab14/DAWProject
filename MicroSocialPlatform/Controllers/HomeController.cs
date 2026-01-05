@@ -17,45 +17,106 @@ namespace MicroSocialPlatform.Controllers
             this.db = db;
         }
 
+        //public async Task<IActionResult> Index()
+        //{
+        //    var currentUserId = User.Identity.IsAuthenticated
+        //        ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        //        : null;
+
+        //    IQueryable<Post> postsQuery = db.Posts
+        //        .Include(p => p.User)
+        //        .OrderByDescending(p => p.CreatedAt);
+
+        //    // GUEST – vede doar postari publice
+        //    if (currentUserId == null)
+        //    {
+        //        postsQuery = postsQuery.Where(p => !p.User.IsPrivate);
+        //    }
+        //    else
+        //    {
+        //        // id-urile userilor pe care ii urmareste (Accepted)
+        //        var followingIds = db.Follows
+        //            .Where(f =>
+        //                f.FollowerId == currentUserId &&
+        //                f.Status == "Accepted")
+        //            .Select(f => f.FollowedId);
+
+        //        postsQuery = postsQuery.Where(p =>
+        //            // propriile postari
+        //            p.UserId == currentUserId ||
+
+        //            // user public
+        //            !p.User.IsPrivate ||
+
+        //            // user privat dar urmarit
+        //            followingIds.Contains(p.UserId)
+        //        );
+        //    }
+
+        //    var posts = await postsQuery.ToListAsync();
+        //    return View(posts);
+        //}
+
         public async Task<IActionResult> Index()
         {
             var currentUserId = User.Identity.IsAuthenticated
                 ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                 : null;
 
-            IQueryable<Post> postsQuery = db.Posts
+            // FOLLOWING IDS (doar daca e logat)
+            IQueryable<string> followingIds = Enumerable.Empty<string>().AsQueryable();
+
+            if (currentUserId != null)
+            {
+                followingIds = db.Follows
+                    .Where(f => f.FollowerId == currentUserId && f.Status == "Accepted")
+                    .Select(f => f.FollowedId);
+            }
+
+            // DISCOVER FEED
+            // - guest: doar useri publici
+            // - logat: public + privat doar daca il urmareste
+            IQueryable<Post> discoverQuery = db.Posts
                 .Include(p => p.User)
                 .OrderByDescending(p => p.CreatedAt);
 
-            // GUEST – vede doar postari publice
             if (currentUserId == null)
             {
-                postsQuery = postsQuery.Where(p => !p.User.IsPrivate);
+                discoverQuery = discoverQuery.Where(p => !p.User.IsPrivate);
             }
             else
             {
-                // id-urile userilor pe care ii urmareste (Accepted)
-                var followingIds = db.Follows
-                    .Where(f =>
-                        f.FollowerId == currentUserId &&
-                        f.Status == "Accepted")
-                    .Select(f => f.FollowedId);
-
-                postsQuery = postsQuery.Where(p =>
-                    // propriile postari
-                    p.UserId == currentUserId ||
-
-                    // user public
+                discoverQuery = discoverQuery.Where(p =>
                     !p.User.IsPrivate ||
-
-                    // user privat dar urmarit
                     followingIds.Contains(p.UserId)
                 );
             }
 
-            var posts = await postsQuery.ToListAsync();
-            return View(posts);
+            // FOLLOWING FEED
+            // - guest: nu are following
+            // - logat: doar cei urmariti (Accepted) + postarile mele
+            IQueryable<Post> followingQuery = db.Posts
+                .Include(p => p.User)
+                .OrderByDescending(p => p.CreatedAt);
+
+            if (currentUserId == null)
+            {
+                followingQuery = followingQuery.Where(p => false); // gol
+            }
+            else
+            {
+                followingQuery = followingQuery.Where(p =>
+                    p.UserId == currentUserId ||
+                    followingIds.Contains(p.UserId)
+                );
+            }
+
+            ViewBag.DiscoverPosts = await discoverQuery.ToListAsync();
+            ViewBag.FollowingPosts = await followingQuery.ToListAsync();
+
+            return View();
         }
+
 
 
         public IActionResult Privacy()

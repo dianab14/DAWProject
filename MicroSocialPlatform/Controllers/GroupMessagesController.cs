@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace MicroSocialPlatform.Controllers
 {
@@ -111,11 +112,25 @@ namespace MicroSocialPlatform.Controllers
             var msg = await db.GroupMessages.FirstOrDefaultAsync(m => m.Id == id);
             if (msg == null) return NotFound();
 
-            if (msg.UserId != CurrentUserId())
+            var userId = CurrentUserId();
+            
+            bool isAdmin = User.IsInRole("Admin");
+
+            // trebuie sa fii membru Accepted ca sa poti sterge
+            if (!isAdmin && !await IsAcceptedMember(msg.GroupId, CurrentUserId()))
                 return Forbid();
 
-            if (!await IsAcceptedMember(msg.GroupId, CurrentUserId()))
+            // verific daca userul curent este moderatorul grupului
+            var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == msg.GroupId);
+            if (group == null) return NotFound();
+
+            bool isModerator = (group.ModeratorId == userId);
+            bool isOwner = (msg.UserId == userId);
+            
+
+            if (!isOwner && !isModerator && !isAdmin)
                 return Forbid();
+
 
             var groupId = msg.GroupId;
 

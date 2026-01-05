@@ -44,12 +44,6 @@ public class ProfileController : Controller
         ViewBag.PendingRequestsCount = GetPendingRequestsCount(user.Id);
 
 
-        var posts = await _db.Posts
-        .Include(p => p.User)
-        .Where(p => p.UserId == user.Id)
-        .OrderByDescending(p => p.CreatedAt)
-        .ToListAsync();
-
         ViewBag.Posts = posts;
 
         return View(user);

@@ -270,10 +270,11 @@ namespace MicroSocialPlatform.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var userId = userManager.GetUserId(User);
+            bool isAdmin = User.IsInRole("Admin");
 
             var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
             if (group == null) return NotFound();
-            if (group.ModeratorId != userId) return Forbid();
+            if (group.ModeratorId != userId && !isAdmin) return Forbid();
 
             db.Groups.Remove(group);
             await db.SaveChangesAsync();

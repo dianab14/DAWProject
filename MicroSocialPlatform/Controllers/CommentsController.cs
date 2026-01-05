@@ -97,7 +97,9 @@ namespace MicroSocialPlatform.Controllers
             var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
             if (comment == null) return NotFound();
 
-            if (comment.UserId != CurrentUserId()) return Forbid();
+            bool isAdmin = User.IsInRole("Admin");
+
+            if (comment.UserId != CurrentUserId() && !isAdmin) return Forbid();
 
             var postId = comment.PostId;
 

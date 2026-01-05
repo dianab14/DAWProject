@@ -1,6 +1,8 @@
-﻿@model List<MicroSocialPlatform.Models.Post>
+﻿@using MicroSocialPlatform.Models
 @{
     ViewData["Title"] = "Home Page";
+    var following = ViewBag.FollowingPosts as List<Post> ?? new();
+    var discover = ViewBag.DiscoverPosts as List<Post> ?? new();
 }
 
 <div class="text-center">
@@ -19,64 +21,304 @@
         <span class="badge bg-primary">User</span>
     }
 </div>
+
+<!-- FOLLOWING / DISCOVER SWITCH -->
+<div class="d-flex justify-content-center mt-3">
+    <div class="follow-switch" role="tablist" aria-label="Feed switch">
+        <button type="button" class="follow-tab active" data-target="followingPanel">My Feed</button>
+        <button type="button" class="follow-tab" data-target="discoverPanel">Discover</button>
+        <div class="follow-indicator"></div>
+    </div>
+</div>
+
 <br />
 
-<!-- POSTS FEED -->
+<!-- FEED (swipe) -->
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-            @foreach (var p in Model)
-            {
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-body">
+            <div class="feed-slider">
 
-                        @{
-                            var fullName = (p.User?.FirstName + " " + p.User?.LastName).Trim();
-                            var displayName = string.IsNullOrWhiteSpace(fullName) ? (p.User?.UserName ?? "Unknown") : fullName;
+                <!-- FOLLOWING -->
+                <div id="followingPanel" class="feed-panel active">
+                    @if (!User.Identity.IsAuthenticated)
+                    {
+                        <div class="alert alert-info text-center">
+                            Log in to see your feed.
+                        </div>
+                    }
+                    else if (!following.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            No posts in your feed yet.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var p in following)
+                        {
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-body">
 
-                        }
+                                    @{
+                                        var fullName = ((p.User?.FirstName ?? "") + " " + (p.User?.LastName ?? "")).Trim();
+                                        var displayName = string.IsNullOrWhiteSpace(fullName) ? "Unknown" : fullName;
+                                    }
 
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <b>@displayName</b>
+                                    @using System.Security.Claims
+                                    @{
+                                        bool isAdmin = User.IsInRole("Admin");
+                                    }
 
-                                <div class="text-muted" style="font-size:0.9rem;">
-                                    @p.CreatedAt.ToLocalTime()
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <b>@displayName</b>
+                                            <div class="text-muted" style="font-size:0.9rem;">
+                                                @p.CreatedAt.ToLocalTime()
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            @if (isAdmin)
+                                            {
+                                                <form asp-controller="Posts" asp-action="Delete" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@p.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(p.Content))
+                                    {
+                                        <p class="mb-3" style="white-space: pre-wrap;">@p.Content</p>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.ImagePath))
+                                    {
+                                        <div class="mb-3">
+                                            <img src="@p.ImagePath" class="img-fluid rounded" style="width:100%; object-fit:cover;" />
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.VideoPath))
+                                    {
+                                        <div class="mb-3">
+                                            <video controls class="w-100 rounded">
+                                                <source src="@p.VideoPath" />
+                                            </video>
+                                        </div>
+                                    }
+
+                                    <div class="d-flex justify-content-end">
+                                        <a asp-controller="Posts" asp-action="Show" asp-route-id="@p.Id"
+                                           class="btn btn-sm btn-outline-success">View</a>
+                                    </div>
+
                                 </div>
                             </div>
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(p.Content))
-                        {
-                            <p class="mb-3">@p.Content</p>
                         }
-
-                        @if (!string.IsNullOrEmpty(p.ImagePath))
-                        {
-                            <div class="mb-3">
-                                <img src="@p.ImagePath" class="img-fluid rounded" style="width:100%; object-fit:cover;" />
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(p.VideoPath))
-                        {
-                            <div class="mb-3">
-                                <video controls class="w-100 rounded">
-                                    <source src="@p.VideoPath" />
-                                </video>
-                            </div>
-                        }
-
-                        <div class="d-flex justify-content-end">
-                            <a asp-controller="Posts" asp-action="Show" asp-route-id="@p.Id"
-                               class="btn btn-sm btn-outline-success">View</a>
-                        </div>
-
-                    </div>
+                    }
                 </div>
-            }
+
+                <!-- DISCOVER -->
+                <div id="discoverPanel" class="feed-panel">
+                    @if (!discover.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            No posts yet.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var p in discover)
+                        {
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-body">
+
+                                    @{
+                                        var fullName = ((p.User?.FirstName ?? "") + " " + (p.User?.LastName ?? "")).Trim();
+                                        var displayName = string.IsNullOrWhiteSpace(fullName) ? "Unknown" : fullName;
+                                    }
+
+                                    @using System.Security.Claims
+                                    @{
+                                        var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                                        bool isAdmin = User.IsInRole("Admin");
+                                        bool isOwner = User.Identity.IsAuthenticated && p.UserId == myId;
+                                    }
+
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <b>@displayName</b>
+                                            <div class="text-muted" style="font-size:0.9rem;">
+                                                @p.CreatedAt.ToLocalTime()
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            @if (isAdmin)
+                                            {
+                                                <form asp-controller="Posts" asp-action="Delete" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@p.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(p.Content))
+                                    {
+                                        <p class="mb-3" style="white-space: pre-wrap;">@p.Content</p>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.ImagePath))
+                                    {
+                                        <div class="mb-3">
+                                            <img src="@p.ImagePath" class="img-fluid rounded" style="width:100%; object-fit:cover;" />
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.VideoPath))
+                                    {
+                                        <div class="mb-3">
+                                            <video controls class="w-100 rounded">
+                                                <source src="@p.VideoPath" />
+                                            </video>
+                                        </div>
+                                    }
+
+                                    <div class="d-flex justify-content-end">
+                                        <a asp-controller="Posts" asp-action="Show" asp-route-id="@p.Id"
+                                           class="btn btn-sm btn-outline-success">View</a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+            </div>
 
         </div>
     </div>
 </div>
+
+<style>
+    .follow-switch {
+        position: relative;
+        display: inline-flex;
+        padding: 4px;
+        border-radius: 999px;
+        background: #f1f3f5;
+    }
+
+    .follow-tab {
+        border: 0;
+        background: transparent;
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-weight: 600;
+        color: #6c757d;
+        position: relative;
+        z-index: 2;
+        min-width: 120px;
+    }
+
+        .follow-tab.active {
+            color: #212529;
+        }
+
+    .follow-indicator {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        width: 50%;
+        left: 4px;
+        border-radius: 999px;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        transition: transform .25s ease;
+        z-index: 1;
+    }
+
+    .feed-slider {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feed-panel {
+        width: 100%;
+        transition: transform .25s ease, opacity .25s ease;
+        transform: translateX(100%);
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+        .feed-panel.active {
+            position: relative;
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .feed-panel.to-left {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .feed-panel.to-right {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+</style>
+
+<script>
+    (function () {
+        const tabs = document.querySelectorAll(".follow-tab");
+        const indicator = document.querySelector(".follow-indicator");
+
+        let current = "followingPanel";
+
+        function show(targetId) {
+            if (targetId === current) return;
+
+            const from = document.getElementById(current);
+            const to = document.getElementById(targetId);
+
+            const isToRight = (current === "followingPanel" && targetId === "discoverPanel");
+
+            from.classList.remove("active");
+            from.classList.add(isToRight ? "to-left" : "to-right");
+
+            to.classList.remove("to-left", "to-right");
+            to.classList.add("active");
+
+            setTimeout(() => {
+                from.classList.remove("to-left", "to-right");
+            }, 300);
+
+            current = targetId;
+        }
+
+        tabs.forEach((btn, idx) => {
+            btn.addEventListener("click", () => {
+                tabs.forEach(t => t.classList.remove("active"));
+                btn.classList.add("active");
+
+                indicator.style.transform = idx === 0 ? "translateX(0)" : "translateX(100%)";
+
+                show(btn.dataset.target);
+            });
+        });
+    })();
+</script>

@@ -212,15 +212,17 @@ namespace MicroSocialPlatform.Controllers
             return RedirectToAction("Show", new { id = post.Id });
         }
 
-        // DELETE (POST) - doar owner
+        // DELETE (POST) - doar owner + admin
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            bool isAdmin = User.IsInRole("Admin");
+
             var post = await db.Posts.FirstOrDefaultAsync(p => p.Id == id);
             if (post == null) return NotFound();
 
-            if (post.UserId != CurrentUserId()) return Forbid();
+            if (post.UserId != CurrentUserId() && !isAdmin) return Forbid();
 
             // stergem fisierele daca exista
             if (!string.IsNullOrEmpty(post.ImagePath))

@@ -83,7 +83,7 @@
                         }
 
                         @* DELETE GROUP *@
-                        @if (isModerator)
+                        @if (isModerator || User.IsInRole("Admin"))
                         {
                             <form asp-action="Delete" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
@@ -271,21 +271,27 @@
                                     }
                                 </div>
 
-                                @if (isAcceptedMember && msg.UserId == myId)
+                                @{
+                                    bool isAdmin = User.IsInRole("Admin");
+                                }
+
+								@if ((isAcceptedMember && (msg.UserId == myId || isModerator) )|| isAdmin)
                                 {
                                     <div class="d-flex gap-2">
-                                        <a asp-controller="GroupMessages"
-                                           asp-action="Edit"
-                                           asp-route-id="@msg.Id"
-                                           class="btn btn-sm btn-success">
-                                            Edit
-                                        </a>
-
-                                        <form asp-controller="GroupMessages" asp-action="Delete" method="post" class="m-0">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@msg.Id" />
-                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                        </form>
+                                    @if(msg.UserId == myId)
+                                    {
+											<a asp-controller="GroupMessages"
+											   asp-action="Edit"
+											   asp-route-id="@msg.Id"
+											   class="btn btn-sm btn-success">
+												Edit
+											</a>
+                                    }
+                                    <form asp-controller="GroupMessages" asp-action="Delete" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@msg.Id" />
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
                                     </div>
                                 }
                             </div>
