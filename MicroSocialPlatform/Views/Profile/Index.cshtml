@@ -7,15 +7,13 @@
 
 @if (Model.IsDeleted)
 {
-    <h2>User not found</h2> 
+    <h2>User not found</h2>
     return;
-} 
+}
 
 <div class="card mx-auto" style="max-width: 1000px;">
     <div class="card-body text-center">
-
         <partial name="_ProfileSummary.cshtml" />
-
     </div>
 </div>
 
@@ -119,3 +117,56 @@
 </div>
 
 
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="text-muted" style="font-size:0.9rem;">
+                                            @p.CreatedAt.ToLocalTime()
+                                            @if (p.UpdatedAt != null)
+                                            {
+                                                <span> • edited</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(p.Content))
+                                    {
+                                        <p class="mb-3" style="white-space: pre-wrap;">@p.Content</p>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.ImagePath))
+                                    {
+                                        <div class="mb-3">
+                                            <img src="@p.ImagePath"
+                                                 class="img-fluid"
+                                                 style="width:100%; border-radius: 14px; object-fit:cover;" />
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(p.VideoPath))
+                                    {
+                                        <div class="mb-3">
+                                            <video controls class="w-100" style="border-radius: 14px;">
+                                                <source src="@p.VideoPath" />
+                                            </video>
+                                        </div>
+                                    }
+
+                                    <div class="d-flex justify-content-end">
+                                        <a asp-controller="Posts"
+                                           asp-action="Show"
+                                           asp-route-id="@p.Id"
+                                           class="btn btn-sm btn-outline-success">
+                                            View
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
