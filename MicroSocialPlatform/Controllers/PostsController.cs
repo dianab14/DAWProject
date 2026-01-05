@@ -13,6 +13,14 @@ namespace MicroSocialPlatform.Controllers
         private readonly ApplicationDbContext db;
         private readonly UserManager<ApplicationUser> userManager;
         private readonly IWebHostEnvironment env;
+        private static readonly List<string> AllowedReactions = new()
+        {
+            "Like",
+            "Haha",
+            "Love",
+            "Dislike"
+        };
+
 
         public PostsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
         {
@@ -24,7 +32,7 @@ namespace MicroSocialPlatform.Controllers
         private string CurrentUserId() => userManager.GetUserId(User);
 
         // FEED - descrescator dupa data
-       
+
         public async Task<IActionResult> Index()
         {
             //var posts = await db.Posts
@@ -45,6 +53,22 @@ namespace MicroSocialPlatform.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (post == null) return NotFound();
+
+            ViewBag.ReactionCounts = await db.Reactions
+            .Where(r => r.PostId == id)
+            .GroupBy(r => r.Type)
+            .Select(g => new
+            {
+                Type = g.Key,
+                Count = g.Count()
+            })
+            .ToDictionaryAsync(x => x.Type, x => x.Count);
+
+            ViewBag.MyReaction = await db.Reactions
+                .FirstOrDefaultAsync(r =>
+                    r.PostId == id &&
+                    r.UserId == CurrentUserId());
+
 
             var comments = await db.Comments
                 .Include(c => c.User)
@@ -216,5 +240,49 @@ namespace MicroSocialPlatform.Controllers
 
             return RedirectToAction("Index");
         }
+    
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> React(int postId, string type)
+        {
+            var userId = CurrentUserId();
+
+            if (!AllowedReactions.Contains(type))
+                return BadRequest("Invalid reaction type");
+
+            var postExists = await db.Posts.AnyAsync(p => p.Id == postId);
+            if (!postExists) return NotFound();
+
+            var reaction = await db.Reactions
+                .FirstOrDefaultAsync(r =>
+                    r.PostId == postId &&
+                    r.UserId == userId);
+
+            if (reaction == null)
+            {
+                db.Reactions.Add(new Reaction
+                {
+                    PostId = postId,
+                    UserId = userId,
+                    Type = type
+                });
+            }
+            else if (reaction.Type == type)
+            {
+                // toggle off
+                db.Reactions.Remove(reaction);
+            }
+            else
+            {
+                // schimbare reactie
+                reaction.Type = type;
+            }
+
+            await db.SaveChangesAsync();
+
+            return RedirectToAction("Show", new { id = postId });
+        }
+
     }
 }

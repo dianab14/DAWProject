@@ -1,0 +1,55 @@
+﻿@model List<MicroSocialPlatform.Models.ApplicationUser>
+
+<h2 class="text-center">@ViewBag.Title</h2>
+
+@if (!Model.Any())
+{
+    <p class="text-center text-muted">No users found.</p>
+}
+else
+{
+    @foreach (var user in Model)
+    {
+        <div class="card mb-2">
+            <div class="card-body d-flex align-items-center gap-3">
+
+                <img src="@user.ProfileImagePath"
+                     class="rounded-circle"
+                     width="50" height="50" />
+
+                <div>
+                    <strong>@user.FirstName @user.LastName</strong><br />
+                    <small class="text-muted">@user.Description</small>
+                </div>
+
+                @if (ViewBag.ShowRemoveFollower == true)
+                {
+                    <form asp-action="RemoveFollower" method="post" class="ms-auto">
+                        <input type="hidden" name="id" value="@user.Id" />
+                        <button class="btn btn-outline-danger btn-sm">
+                            Remove
+                        </button>
+                    </form>
+                }
+
+                @if (ViewBag.ShowUnfollow == true)
+                {
+                    <form asp-action="UnfollowFromList"
+                          method="post"
+                          class="ms-auto">
+                        <input type="hidden" name="id" value="@user.Id" />
+                        <button class="btn btn-outline-secondary btn-sm">
+                            Unfollow
+                        </button>
+                    </form>
+                }
+
+                <a asp-action="Show"
+                   asp-route-id="@user.Id"
+                   class="btn btn-outline-primary ms-auto">
+                    View profile
+                </a>
+            </div>
+        </div>
+    }
+}

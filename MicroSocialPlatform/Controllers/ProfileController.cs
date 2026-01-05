@@ -31,7 +31,18 @@ public class ProfileController : Controller
         if (user == null || user.IsDeleted) // verific daca userul exista si nu e sters (soft delete)
             return NotFound();
 
+        var posts = await _db.Posts
+            .Include(p => p.User)
+            .Where(p => p.UserId == user.Id)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
         ViewBag.IsMyProfile = true;
+        ViewBag.Posts = posts;
+        ViewBag.FollowersCount = GetFollowersCount(user.Id);
+        ViewBag.FollowingCount = GetFollowingCount(user.Id);
+        ViewBag.PendingRequestsCount = GetPendingRequestsCount(user.Id);
+
 
         var posts = await _db.Posts
         .Include(p => p.User)
@@ -66,10 +77,12 @@ public class ProfileController : Controller
         if (user == null || user.IsDeleted) // verific daca userul exista si nu e sters (soft delete)
             return NotFound();
 
+        bool wasPrivate = user.IsPrivate; // verific daca schimb vizibilitatea profilului de la privat la public
+
         if (ProfileImage != null && ProfileImage.Length > 0)
         {
             // RemoveProfilePhoto = false; // daca se incarca o poza noua, se va sterge oricum mai jos poza veche
-                                        // deci nu mai are sens sa o inlocuim cu cea default
+            // deci nu mai are sens sa o inlocuim cu cea default
 
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
             var fileExtension = Path.GetExtension(ProfileImage.FileName).ToLower();
@@ -152,6 +165,23 @@ public class ProfileController : Controller
             return View(input);
 
         await _userManager.UpdateAsync(user);
+
+        // daca userul a trecut de la Private la Public accept toate request-urile
+        if (wasPrivate && !user.IsPrivate)
+        {
+            var pendingRequests = _db.Follows.Where(f =>
+                f.FollowedId == user.Id &&
+                f.Status == "Pending");
+
+            foreach (var req in pendingRequests)
+            {
+                req.Status = "Accepted";
+                req.AcceptedAt = DateTime.UtcNow;
+            }
+
+            _db.SaveChanges();
+        }
+
 
         return RedirectToAction("Index", "Profile");
     }
@@ -246,14 +276,40 @@ public class ProfileController : Controller
 
         ViewBag.IsMyProfile = isMyProfile;
 
-        // logica pentru profil privat
-        if (user.IsPrivate && !isMyProfile)
+        ViewBag.FollowersCount = GetFollowersCount(user.Id);
+        ViewBag.FollowingCount = GetFollowingCount(user.Id);
+
+        if (ViewBag.IsMyProfile)
         {
-            ViewBag.IsPrivateView = true;   // affisare limitata
-            return View(user);
+            ViewBag.PendingRequestsCount = GetPendingRequestsCount(user.Id);
         }
 
-        ViewBag.IsPrivateView = false;
+        ViewBag.Follow = _db.Follows.FirstOrDefault(f =>
+            f.FollowerId == currentUserId &&
+            f.FollowedId == user.Id
+        );
+
+        // Followers = cine il urmareste
+        ViewBag.FollowersCount = _db.Follows.Count(f =>
+            f.FollowedId == user.Id &&
+            f.Status == "Accepted");
+
+        // Following = pe cine urmareste
+        ViewBag.FollowingCount = _db.Follows.Count(f =>
+            f.FollowerId == user.Id &&
+            f.Status == "Accepted");
+
+        // logica pentru profil privat
+        /* if (user.IsPrivate && !isMyProfile)
+            {
+                ViewBag.IsPrivateView = true;   // afisare limitata 
+                return View(user);
+            }
+        */
+
+        bool canViewFullProfile = CanViewFullProfile(user, currentUserId);
+
+        ViewBag.IsPrivateView = !canViewFullProfile;
 
         // profil public sau e al meu -> incarc postari
         var posts = await _db.Posts
@@ -265,22 +321,291 @@ public class ProfileController : Controller
         ViewBag.Posts = posts;
 
         return View(user);
-
-        /*
-            // profil privat
-            if (user.IsPrivate)
-            {
-                if (!User.Identity.IsAuthenticated)
-                    return Forbid();
-
-                var currentUser = await _userManager.GetUserAsync(User);
-
-                if (currentUser == null || currentUser.Id != user.Id)
-                {
-                    // aici vei extinde cu follow logic în Sprint 3
-                    return Forbid();
-                }
-            }
-        */
     }
+    [Authorize]
+    [HttpPost]
+    public IActionResult Follow(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User); // obtin id-ul userului logat
+
+        if (currentUserId == id) // nu pot sa imi dau follow mie insumi
+            return RedirectToAction("Show", new { id });
+
+        var existingFollow = _db.Follows // verific daca am deja la follow
+            .FirstOrDefault(f =>
+                f.FollowerId == currentUserId &&
+                f.FollowedId == id);
+
+        if (existingFollow != null) // deja am la follow / am dat request
+            return RedirectToAction("Show", new { id });
+
+        var followedUser = _db.Users.First(u => u.Id == id); // obtin userul care urmeaza sa fie urmarit
+
+        var follow = new Follow
+        {
+            FollowerId = currentUserId,
+            FollowedId = id,
+            Status = followedUser.IsPrivate ? "Pending" : "Accepted", // daca e privat, ramane pending pana la acceptare
+            AcceptedAt = followedUser.IsPrivate ? null : DateTime.UtcNow // daca nu e privat, e acceptat imediat
+        };
+
+        _db.Follows.Add(follow);
+        _db.SaveChanges();
+
+        TempData["message"] = followedUser.IsPrivate
+            ? "Follow request sent."
+            : "You are now following this user.";
+
+        TempData["messageType"] = "success";
+
+        return RedirectToAction("Show", new { id });
+    }
+
+    [Authorize]
+    [HttpPost]
+    public IActionResult Unfollow(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User); // obtin id-ul userului logat
+
+        var follow = _db.Follows // verific daca am la follow (request sau acceptat)
+            .FirstOrDefault(f =>
+                f.FollowerId == currentUserId &&
+                f.FollowedId == id);
+
+        if (follow == null) // nu am la follow / nu am dat request
+            return RedirectToAction("Show", new { id });
+
+        if (follow.Status == "Accepted") // daca era acceptat
+        {
+            TempData["message"] = "You have unfollowed this user.";
+        }
+        else if (follow.Status == "Pending") // daca era request in asteptare
+        {
+            TempData["message"] = "Follow request cancelled.";
+        }
+
+        TempData["messageType"] = "success";
+
+        _db.Follows.Remove(follow);
+        _db.SaveChanges();
+
+        return RedirectToAction("Show", new { id });
+    }
+
+    [Authorize]
+    public IActionResult Requests()
+    {
+        var currentUserId = _userManager.GetUserId(User); // obtin id-ul userului logat
+
+        var requests = _db.Follows // obtin cererile de follow primite (si neacceptate inca)
+            .Where(f =>
+                f.FollowedId == currentUserId &&
+                f.Status == "Pending")
+            .Include(f => f.Follower)
+            .OrderByDescending(f => f.RequestedAt)
+            .ToList();
+
+        return View(requests);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public IActionResult Accept(int id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+
+        var follow = _db.Follows.FirstOrDefault(f =>
+            f.Id == id &&
+            f.FollowedId == currentUserId &&
+            f.Status == "Pending");
+
+        if (follow == null)
+            return NotFound();
+
+        follow.Status = "Accepted";
+        follow.AcceptedAt = DateTime.UtcNow;
+        _db.SaveChanges();
+
+        return RedirectToAction("Requests");
+    }
+
+    [Authorize]
+    [HttpPost]
+    public IActionResult Decline(int id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+
+        var follow = _db.Follows.FirstOrDefault(f =>
+            f.Id == id &&
+            f.FollowedId == currentUserId &&
+            f.Status == "Pending");
+
+        if (follow == null)
+            return NotFound();
+
+        _db.Follows.Remove(follow);
+        _db.SaveChanges();
+
+        return RedirectToAction("Requests");
+    }
+
+    [Authorize]
+    public IActionResult Followers(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+        ViewBag.IsMyProfile = (currentUserId == id);
+        ViewBag.ShowRemoveFollower = ViewBag.IsMyProfile;
+        ViewBag.ShowUnfollow = false;
+
+        var user = _db.Users.FirstOrDefault(u => u.Id == id);
+        if (user == null || user.IsDeleted)
+            return NotFound();
+
+        if (!CanViewFullProfile(user, currentUserId))
+            return Forbid();
+
+        var followers = _db.Follows
+            .Where(f => f.FollowedId == user.Id && f.Status == "Accepted")
+            .Include(f => f.Follower)
+            .Select(f => f.Follower)
+            .ToList();
+
+        string possessive =
+        user.FirstName.EndsWith("s")
+        ? $"{user.LastName} {user.FirstName}'"
+        : $"{user.LastName} {user.FirstName}'s";
+
+        ViewBag.Title = $"{possessive} Followers";
+        return View("FollowList", followers);
+    }
+
+
+    [Authorize]
+    public IActionResult Following(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+        ViewBag.IsMyProfile = (currentUserId == id);
+        ViewBag.ShowRemoveFollower = false;
+        ViewBag.ShowUnfollow = ViewBag.IsMyProfile;
+
+        var user = _db.Users.FirstOrDefault(u => u.Id == id);
+        if (user == null || user.IsDeleted)
+            return NotFound();
+
+        if (!CanViewFullProfile(user, currentUserId))
+            return Forbid();
+
+        var following = _db.Follows
+            .Where(f => f.FollowerId == user.Id && f.Status == "Accepted")
+            .Include(f => f.Followed)
+            .Select(f => f.Followed)
+            .ToList();
+
+        string possessive =
+        user.FirstName.EndsWith("s")
+        ? $"{user.LastName} {user.FirstName}'"
+        : $"{user.LastName} {user.FirstName}'s";
+
+        ViewBag.Title = $"{possessive} Following";
+        return View("FollowList", following);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public IActionResult RemoveFollower(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+
+        // id = userul care MA urmareste
+        var follow = _db.Follows.FirstOrDefault(f =>
+            f.FollowerId == id &&
+            f.FollowedId == currentUserId &&
+            f.Status == "Accepted");
+
+        if (follow == null)
+            return NotFound();
+
+        _db.Follows.Remove(follow);
+        _db.SaveChanges();
+
+        TempData["message"] = "Follower removed.";
+        TempData["messageType"] = "success";
+
+        return RedirectToAction("Followers", new { id = currentUserId });
+    }
+
+    [Authorize]
+    [HttpPost]
+    public IActionResult UnfollowFromList(string id)
+    {
+        var currentUserId = _userManager.GetUserId(User);
+
+        // id = userul pe care il urmaresc
+        var follow = _db.Follows.FirstOrDefault(f =>
+            f.FollowerId == currentUserId &&
+            f.FollowedId == id &&
+            f.Status == "Accepted");
+
+        if (follow == null)
+            return NotFound();
+
+        _db.Follows.Remove(follow);
+        _db.SaveChanges();
+
+        TempData["message"] = "Unfollowed successfully.";
+        TempData["messageType"] = "success";
+
+        return RedirectToAction("Following", new { id = currentUserId });
+    }
+
+
+    [NonAction]
+    private int GetFollowersCount(string userId)
+    {
+        return _db.Follows.Count(f =>
+            f.FollowedId == userId &&
+            f.Status == "Accepted");
+    }
+
+    [NonAction]
+    private int GetFollowingCount(string userId)
+    {
+        return _db.Follows.Count(f =>
+            f.FollowerId == userId &&
+            f.Status == "Accepted");
+    }
+
+    [NonAction]
+    private int GetPendingRequestsCount(string userId)
+    {
+        return _db.Follows.Count(f =>
+            f.FollowedId == userId &&
+            f.Status == "Pending");
+    }
+
+    [NonAction]
+    private bool CanViewFullProfile(ApplicationUser profileUser, string currentUserId)
+    {
+        // not logged in
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            return !profileUser.IsPrivate;
+        }
+        // owner
+        if (profileUser.Id == currentUserId)
+            return true;
+
+        // public profile
+        if (!profileUser.IsPrivate)
+            return true;
+
+        // accepted follower
+        return _db.Follows.Any(f =>
+            f.FollowerId == currentUserId &&
+            f.FollowedId == profileUser.Id &&
+            f.Status == "Accepted");
+    }
+
+
 }
+

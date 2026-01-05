@@ -16,6 +16,6 @@ namespace MicroSocialPlatform.Models
         public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? AcceptedAt { get; set; }
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; } = "Pending"; // doar Pending sau Accepted; Rejected = se sterge din DB cererea
     }
 }

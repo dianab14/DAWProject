@@ -10,6 +10,22 @@
 
 <p>@Model.Description</p>
 
+<div class="d-flex justify-content-center gap-4 mt-3">
+    <a asp-action="Followers"
+       asp-route-id="@Model.Id"
+       class="text-decoration-none text-dark">
+        <strong>@ViewBag.FollowersCount</strong><br />
+        <span class="text-muted">Followers</span>
+    </a>
+
+    <a asp-action="Following"
+       asp-route-id="@Model.Id"
+       class="text-decoration-none text-dark">
+        <strong>@ViewBag.FollowingCount</strong><br />
+        <span class="text-muted">Following</span>
+    </a>
+</div>
+
 <p class="mt-2">
     @if (Model.IsPrivate)
     {
@@ -36,5 +52,20 @@
 {
     <a asp-action="Edit" class="btn btn-primary mt-3">
         <i class="bi bi-pencil"></i> Edit profile
+    </a>
+}
+
+@if (ViewBag.IsMyProfile && Model.IsPrivate)
+{
+    <a asp-action="Requests"
+       class="btn btn-outline-primary mt-3">
+        <i class="bi bi-inbox"></i> Follow requests
+
+        @if ((int)(ViewBag.PendingRequestsCount ?? 0) > 0)
+        {
+            <span class="badge bg-danger ms-1">
+                @ViewBag.PendingRequestsCount
+            </span>
+        }
     </a>
 }

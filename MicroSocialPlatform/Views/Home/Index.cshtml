@@ -19,7 +19,6 @@
         <span class="badge bg-primary">User</span>
     }
 </div>
-
 <br />
 
 <!-- POSTS FEED -->
@@ -35,13 +34,13 @@
                         @{
                             var fullName = (p.User?.FirstName + " " + p.User?.LastName).Trim();
                             var displayName = string.IsNullOrWhiteSpace(fullName) ? (p.User?.UserName ?? "Unknown") : fullName;
-                            
+
                         }
 
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
                                 <b>@displayName</b>
-                                
+
                                 <div class="text-muted" style="font-size:0.9rem;">
                                     @p.CreatedAt.ToLocalTime()
                                 </div>

@@ -16,6 +16,13 @@
 {
     <div class="card">
         <div class="card-body">
+
+            
+            <img src="@user.ProfileImagePath"
+                    class="rounded-circle mb-3"
+                    width="120"
+                    height="120" />
+            
             <h5>@user.FirstName @user.LastName</h5>
 
             <p>@user.Description</p>
@@ -24,13 +31,13 @@
                asp-controller="Profile"
                asp-action="Show"
                asp-route-id="@user.Id">
-                Afisare profil
+                Show profile
             </a>
 
             @if (user.IsPrivate)
             {
                 <span class="badge bg-secondary ms-2">
-                    Profil privat
+                    Private Profile
                 </span>
             }
         </div>
