@@ -3,6 +3,10 @@
 @{
     var myGroupStatus = ViewBag.MyGroupStatus as Dictionary<int, string>
                         ?? new Dictionary<int, string>();
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int lastPage = ViewBag.LastPage ?? 1;
+    string baseUrl = ViewBag.PaginationBaseUrl ?? "/Groups/Index?page";
 }
 
 <h2>Groups</h2>
@@ -87,6 +91,32 @@
         </div>
     }
 </div>
+@if (lastPage > 1)
+{
+    <div class="d-flex justify-content-center mt-3">
+        <nav aria-label="Groups pagination">
+            <ul class="pagination">
+
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" href="@(baseUrl + "=1")">&laquo;</a>
+                </li>
+
+                @for (int i = 1; i <= lastPage; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" href="@(baseUrl + "=" + i)">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage == lastPage ? "disabled" : "")">
+                    <a class="page-link" href="@(baseUrl + "=" + lastPage)">&raquo;</a>
+                </li>
+
+            </ul>
+        </nav>
+    </div>
+}
 
 <br />
 <br />
+
