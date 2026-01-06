@@ -1,5 +1,6 @@
 using MicroSocialPlatform.Data;
 using MicroSocialPlatform.Models;
+using MicroSocialPlatform.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped<IAiModerationService, AiModerationService>();
 
 var app = builder.Build();
 

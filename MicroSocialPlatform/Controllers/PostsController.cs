@@ -1,5 +1,6 @@
 ﻿using MicroSocialPlatform.Data;
 using MicroSocialPlatform.Models;
+using MicroSocialPlatform.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace MicroSocialPlatform.Controllers
         private readonly ApplicationDbContext db;
         private readonly UserManager<ApplicationUser> userManager;
         private readonly IWebHostEnvironment env;
+        private readonly IAiModerationService aiModerationService;
         private static readonly List<string> AllowedReactions = new()
         {
             "Like",
@@ -22,11 +24,12 @@ namespace MicroSocialPlatform.Controllers
         };
 
 
-        public PostsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public PostsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env, IAiModerationService aiModerationService)
         {
             this.db = db;
             this.userManager = userManager;
             this.env = env;
+            this.aiModerationService = aiModerationService;
         }
 
         private string CurrentUserId() => userManager.GetUserId(User);
@@ -116,6 +119,31 @@ namespace MicroSocialPlatform.Controllers
                 return View();
             }
 
+            if (hasText)
+            {
+                var result = await aiModerationService.AnalyzeAsync(content!.Trim());
+
+                // LOGGING
+                db.AiModerationLogs.Add(new AiModerationLog
+                {
+                    Content = content!.Trim(),
+                    IsAppropriate = result.IsAppropriate,
+                    Confidence = result.Confidence,
+                    ContentType = "Post",
+                    UserId = userId
+                });
+
+                await db.SaveChangesAsync();
+
+                if (!result.Success || !result.IsAppropriate)
+                {
+                    TempData["message"] = "Your content contains inappropriate terms. Please rephrase and try again.";
+                    TempData["messageType"] = "danger";
+
+                    return View();
+                }
+            }
+
             string? imagePath = null;
             string? videoPath = null;
 
@@ -203,6 +231,33 @@ namespace MicroSocialPlatform.Controllers
             if (post == null) return NotFound();
 
             if (post.UserId != CurrentUserId()) return Forbid();
+
+            bool hasText = !string.IsNullOrWhiteSpace(content);
+
+            if (hasText)
+            {
+                var result = await aiModerationService.AnalyzeAsync(content!.Trim());
+
+                // LOGGING
+                db.AiModerationLogs.Add(new AiModerationLog
+                {
+                    Content = content!.Trim(),
+                    IsAppropriate = result.IsAppropriate,
+                    Confidence = result.Confidence,
+                    ContentType = "Post (Edit)",
+                    UserId = CurrentUserId()
+                });
+
+                await db.SaveChangesAsync();
+
+                if (!result.Success || !result.IsAppropriate)
+                {
+                    TempData["message"] = "Your content contains inappropriate terms. Please rephrase and try again.";
+                    TempData["messageType"] = "danger";
+
+                    return View(post);
+                }
+            }
 
             post.Content = content?.Trim();
             post.UpdatedAt = DateTime.UtcNow;

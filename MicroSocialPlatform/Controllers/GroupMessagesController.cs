@@ -113,7 +113,7 @@ namespace MicroSocialPlatform.Controllers
             if (msg == null) return NotFound();
 
             var userId = CurrentUserId();
-            
+
             bool isAdmin = User.IsInRole("Admin");
 
             // trebuie sa fii membru Accepted ca sa poti sterge
@@ -126,7 +126,7 @@ namespace MicroSocialPlatform.Controllers
 
             bool isModerator = (group.ModeratorId == userId);
             bool isOwner = (msg.UserId == userId);
-            
+
 
             if (!isOwner && !isModerator && !isAdmin)
                 return Forbid();

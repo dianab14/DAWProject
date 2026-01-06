@@ -275,7 +275,7 @@
                                     bool isAdmin = User.IsInRole("Admin");
                                 }
 
-								@if ((isAcceptedMember && (msg.UserId == myId || isModerator) )|| isAdmin)
+                                @if ((isAcceptedMember && (msg.UserId == myId || isModerator)) || isAdmin)
                                 {
                                     <div class="d-flex gap-2">
                                     @if(msg.UserId == myId)

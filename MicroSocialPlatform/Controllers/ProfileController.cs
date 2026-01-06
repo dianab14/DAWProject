@@ -420,6 +420,9 @@ public class ProfileController : Controller
         follow.AcceptedAt = DateTime.UtcNow;
         _db.SaveChanges();
 
+        TempData["message"] = "Request approved.";
+        TempData["messageType"] = "success";
+
         return RedirectToAction("Requests");
     }
 
@@ -439,6 +442,9 @@ public class ProfileController : Controller
 
         _db.Follows.Remove(follow);
         _db.SaveChanges();
+
+        TempData["message"] = "Request rejected.";
+        TempData["messageType"] = "warning";
 
         return RedirectToAction("Requests");
     }

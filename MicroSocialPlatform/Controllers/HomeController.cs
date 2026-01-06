@@ -76,6 +76,7 @@ namespace MicroSocialPlatform.Controllers
             // DISCOVER FEED
             // - guest: doar useri publici
             // - logat: public + privat doar daca il urmareste
+
             IQueryable<Post> discoverQuery = db.Posts
                 .Include(p => p.User)
                 .OrderByDescending(p => p.CreatedAt);
@@ -87,9 +88,9 @@ namespace MicroSocialPlatform.Controllers
             else
             {
                 discoverQuery = discoverQuery.Where(p =>
-                    !p.User.IsPrivate ||
-                    followingIds.Contains(p.UserId)
-                );
+                                  !p.User.IsPrivate ||
+                                  followingIds.Contains(p.UserId)
+                              );
             }
 
             // FOLLOWING FEED
@@ -106,8 +107,10 @@ namespace MicroSocialPlatform.Controllers
             else
             {
                 followingQuery = followingQuery.Where(p =>
+
                     p.UserId == currentUserId ||
                     followingIds.Contains(p.UserId)
+
                 );
             }
 
