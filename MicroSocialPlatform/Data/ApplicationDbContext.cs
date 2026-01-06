@@ -19,6 +19,7 @@ namespace MicroSocialPlatform.Data
         public DbSet<Group> Groups { get; set; }
         public DbSet<GroupMembership> GroupMemberships { get; set; }
         public DbSet<GroupMessage> GroupMessages { get; set; }
+        public DbSet<AiModerationLog> AiModerationLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

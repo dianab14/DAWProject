@@ -32,7 +32,11 @@
                             </div>
                         </div>
 
-                        @if (isOwner)
+                        @{
+                            bool isAdmin = User.IsInRole("Admin");
+                        }
+
+                        @if (isOwner || isAdmin)
                         {
                             <div class="d-flex gap-2">
                                 <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-success">Edit</a>
@@ -168,9 +172,8 @@
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         @{
-                                            var cFullName = (c.User?.FirstName + " " + c.User?.LastName).Trim();
-                                            var cEmail = c.User?.Email;
-                                            var cDisplayName = string.IsNullOrWhiteSpace(cFullName) ? (c.User?.UserName ?? "Unknown") : cFullName;
+                                            var cFullName = ((c.User?.FirstName ?? "") + " " + (c.User?.LastName ?? "")).Trim();
+                                            var cDisplayName = string.IsNullOrWhiteSpace(cFullName) ? "Unknown" : cFullName;
                                         }
 
                                         <b>@cDisplayName</b>
@@ -183,24 +186,31 @@
                                         </div>
                                     </div>
 
-                                    @if (commentOwner)
-                                    {
-                                        <div class="d-flex gap-2">
+                                    <div class="d-flex gap-2">
+                                        @* Edit doar pentru owner *@
+                                        @if (commentOwner)
+                                        {
                                             <a asp-controller="Comments"
                                                asp-action="Edit"
                                                asp-route-id="@c.Id"
-                                               class="btn btn-sm btn-success">
+                                               class="btn btn-sm btn-outline-success">
                                                 Edit
                                             </a>
-
+                                        }
+                                        @* Delete pentru owner sau admin *@
+                                        @if (commentOwner || isAdmin)
+                                        {
                                             <form asp-controller="Comments"
                                                   asp-action="Delete"
                                                   method="post"
                                                   class="m-0">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@c.Id" />
-                                                <button class="btn btn-sm btn-danger">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Delete
+                                                </button>
                                             </form>
+                                        }
                                         </div>
                                     }
                                 </div>
