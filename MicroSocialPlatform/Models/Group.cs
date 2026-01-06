@@ -8,9 +8,11 @@ namespace MicroSocialPlatform.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "This group must have a name!")]
+        [StringLength(50,ErrorMessage = "Max. 50 characters") ]
         public string Name { get; set; }
 
         [Required(ErrorMessage = "This group must have a description!")]
+        [StringLength(300, ErrorMessage = "Max. 300 characters")]
         public string Description { get; set; }
 
         /// un group este creat de un user (moderator)

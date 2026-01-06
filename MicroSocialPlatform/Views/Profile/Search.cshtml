@@ -1,81 +1,215 @@
-﻿@* Motorul de cautare *@
-<form method="GET">
-    <div class="input-group mb-3">
-        <input type="text"
-               class="form-control"
-               placeholder="Search users"
-               name="text"
-               value="@ViewBag.SearchString">
-        <button class="btn btn-outline-success" type="submit">
-            Search
-        </button>
-    </div>
-</form>
+﻿@model List<MicroSocialPlatform.Models.ApplicationUser>
 
-@foreach (var user in ViewBag.Users)
-{
-    <div class="card">
-        <div class="card-body">
+@{
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    int lastPage = ViewBag.lastPage != null ? (int)ViewBag.lastPage : 1;
+    string baseUrl = ViewBag.PaginationBaseUrl as string ?? "/Profile/Search?page=";
 
-            
-            <img src="@user.ProfileImagePath"
-                    class="rounded-circle mb-3"
-                    width="120"
-                    height="120" />
-            
-            <h5>@user.FirstName @user.LastName</h5>
-
-            <p>@user.Description</p>
-
-            <a class="btn btn-success"
-               asp-controller="Profile"
-               asp-action="Show"
-               asp-route-id="@user.Id">
-                Show profile
-            </a>
-
-            @if (user.IsPrivate)
-            {
-                <span class="badge bg-secondary ms-2">
-                    Private Profile
-                </span>
-            }
-        </div>
-    </div>
-
-    <br />
-    <br />
+    var users = ViewBag.Users as IEnumerable<MicroSocialPlatform.Models.ApplicationUser> ?? Model ?? new List<MicroSocialPlatform.Models.ApplicationUser>();
 }
 
-@* Afisare paginata *@
-<div>
-    <nav aria-label="Page navigation example">
-        <ul class="pagination">
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Search Results</h2>
+    </div>
 
-            <li class="page-item">
-                <a class="page-link"
-                   href="@ViewBag.PaginationBaseUrl=1">
-                    &laquo;
-                </a>
-            </li>
-
-            @for (int i = 1; i <= ViewBag.lastPage; i++)
+    @if (!users.Any())
+    {
+        <div class="empty-box">
+            <div class="empty-icon">✦</div>
+            <div class="empty-title">No users found</div>
+            <div class="empty-text">Try a different search term.</div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var user in users)
             {
-                <li class="page-item">
-                    <a class="page-link"
-                       href="@ViewBag.PaginationBaseUrl=@i">
-                        @i
-                    </a>
-                </li>
+                var fullName = ((user.FirstName ?? "") + " " + (user.LastName ?? "")).Trim();
+                var displayName = string.IsNullOrWhiteSpace(fullName) ? (user.UserName ?? "Unknown") : fullName;
+
+                var profileImg = user.ProfileImagePath;
+                bool hasProfileImg =
+                !string.IsNullOrWhiteSpace(profileImg) &&
+                profileImg != "/images/profiles/default-profile.png";
+
+                var initials = string.Join("",
+                displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s[0]).Take(2)).ToUpper();
+
+                <div class="col-12 col-md-6 col-lg-4 mb-4">
+                    <div class="user-card h-100">
+                        <div class="user-card-body d-flex flex-column">
+
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <a asp-controller="Profile" asp-action="Show" asp-route-id="@user.Id" class="avatar-link">
+                                    @if (hasProfileImg)
+                                    {
+                                        <img src="@profileImg" class="avatar-img" alt="Profile photo" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-circle">@initials</div>
+                                    }
+                                </a>
+
+                                <div class="flex-grow-1">
+                                    <a asp-controller="Profile" asp-action="Show" asp-route-id="@user.Id"
+                                       class="user-name profile-link">
+                                        @displayName
+                                    </a>
+
+                                    @if (user.IsPrivate)
+                                    {
+                                        <span class="badge badge-private ms-2">Private</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="user-desc mb-3">
+                                @if (!string.IsNullOrWhiteSpace(user.Description))
+                                {
+                                    @user.Description
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No description.</span>
+                                }
+                            </div>
+
+                            <div class="mt-auto d-flex justify-content-end">
+                                <a asp-controller="Profile" asp-action="Show" asp-route-id="@user.Id"
+                                   class="btn btn-outline-primary btn-pill">
+                                    View profile
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
+        </div>
+    }
 
-            <li class="page-item">
-                <a class="page-link"
-                   href="@ViewBag.PaginationBaseUrl=@ViewBag.lastPage">
-                    &raquo;
-                </a>
-            </li>
+    @if (lastPage > 1)
+    {
+        <div class="d-flex justify-content-center mt-3">
+            <nav aria-label="Users pagination">
+                <ul class="pagination">
 
-        </ul>
-    </nav>
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@(baseUrl + "1")">&laquo;</a>
+                    </li>
+
+                    @for (int i = 1; i <= lastPage; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="@(baseUrl + i)">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(currentPage == lastPage ? "disabled" : "")">
+                        <a class="page-link" href="@(baseUrl + lastPage)">&raquo;</a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    }
 </div>
+
+<style>
+    body {
+        background: #f6efe3;
+    }
+
+    .user-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .user-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .user-card-body {
+        padding: 20px;
+    }
+
+
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .profile-link:hover {
+            text-decoration: underline;
+        }
+
+    .avatar-link {
+        display: inline-flex;
+        text-decoration: none;
+    }
+
+    .avatar-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(13,110,253,.95), rgba(111,66,193,.85));
+        box-shadow: 0 10px 20px rgba(13,110,253,.18);
+        flex: 0 0 auto;
+    }
+
+    .avatar-img {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+        flex: 0 0 auto;
+    }
+
+    .user-name {
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .user-desc {
+        color: #6c757d;
+        font-size: .95rem;
+        line-height: 1.5;
+    }
+
+    .badge-private {
+        background: rgba(108,117,125,.15);
+        color: #495057;
+        border: 1px solid rgba(108,117,125,.25);
+        padding: .35em .6em;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: .8rem;
+    }
+
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>

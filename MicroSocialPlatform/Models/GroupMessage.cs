@@ -7,6 +7,8 @@ namespace MicroSocialPlatform.Models
         [Key]
         public int Id { get; set; }
 
+        [Required(ErrorMessage = "The comment mustn't be empty!")]
+        [StringLength(1000, ErrorMessage = "Max. 1000 characters")]
         public string Content { get; set; }
         public DateTime SentAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

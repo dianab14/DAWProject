@@ -216,35 +216,34 @@ public class ProfileController : Controller
         users = users.OrderBy(u => u.FirstName);
 
         // AFISARE PAGINATA
+        int perPage = 6;
 
-        int _perPage = 2;
-
-        int totalItems = users.Count();
-
-        var currentPage = Convert.ToInt32(HttpContext.Request.Query["page"]);
-
-        var offset = 0;
-
-        if (!currentPage.Equals(0))
+        // page (default 1)
+        int currentPage = 1;
+        var pageStr = HttpContext.Request.Query["page"].ToString();
+        if (!string.IsNullOrWhiteSpace(pageStr) && int.TryParse(pageStr, out var parsed) && parsed > 0)
         {
-            offset = (currentPage - 1) * _perPage;
+            currentPage = parsed;
         }
 
-        var paginatedUsers = users.Skip(offset).Take(_perPage);
+        int totalItems = users.Count();
+        int lastPage = (int)Math.Ceiling((double)totalItems / perPage);
 
-        ViewBag.lastPage = Math.Ceiling((float)totalItems / (float)_perPage);
+        int offset = (currentPage - 1) * perPage;
 
+        var paginatedUsers = users.Skip(offset).Take(perPage).ToList();
+
+        ViewBag.CurrentPage = currentPage;
+        ViewBag.lastPage = lastPage; // IMPORTANT: int, nu double
         ViewBag.Users = paginatedUsers;
 
-        if (text != "")
+        if (!string.IsNullOrWhiteSpace(text))
         {
-            ViewBag.PaginationBaseUrl =
-                "/Profile/Search?text=" + text + "&page";
+            ViewBag.PaginationBaseUrl = "/Profile/Search?text=" + Uri.EscapeDataString(text) + "&page=";
         }
         else
         {
-            ViewBag.PaginationBaseUrl =
-                "/Profile/Search?page";
+            ViewBag.PaginationBaseUrl = "/Profile/Search?page=";
         }
 
         return View();

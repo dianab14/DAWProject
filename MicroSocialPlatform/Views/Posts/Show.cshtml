@@ -1,131 +1,162 @@
 ﻿@using System.Security.Claims
+@using MicroSocialPlatform.Models
 @{
-    var post = ViewBag.Post as MicroSocialPlatform.Models.Post;
-    var comments = ViewBag.Comments as List<MicroSocialPlatform.Models.Comment> ?? new();
+    var post = ViewBag.Post as Post;
+    var comments = ViewBag.Comments as List<Comment> ?? new();
     var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
     bool isOwner = User.Identity.IsAuthenticated && post.UserId == myId;
+    bool isAdmin = User.IsInRole("Admin");
+
+    // Post author display
+    var fullName = ((post.User?.FirstName ?? "") + " " + (post.User?.LastName ?? "")).Trim();
+    var displayName = string.IsNullOrWhiteSpace(fullName) ? (post.User?.UserName ?? "Unknown") : fullName;
+
+    var profileImg = post.User?.ProfileImagePath;
+    bool hasProfileImg =
+        !string.IsNullOrWhiteSpace(profileImg) &&
+        profileImg != "/images/profiles/default-profile.png";
+
+    var initials = string.Join("",
+        displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                   .Select(s => s[0]).Take(2)).ToUpper();
+
+    var myReaction = ViewBag.MyReaction as Reaction;
+    var counts = ViewBag.ReactionCounts as Dictionary<string, int>;
+    var reactions = new[] { "Like", "Haha", "Love", "Dislike" };
 }
 
-<div class="container">
+<div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
             <!-- POST -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
+            <div class="post-card mb-4">
+                <div class="post-card-body">
 
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            @{
-                                var fullName = (post.User?.FirstName + " " + post.User?.LastName).Trim();
-                                var email = post.User?.Email;
-                                var displayName = string.IsNullOrWhiteSpace(fullName) ? (post.User?.UserName ?? "Unknown") : fullName;
-                            }
+                    <!-- Header: avatar + nume + data + actions -->
+                    <div class="d-flex justify-content-between align-items-start gap-2">
 
-                            <b>@displayName</b>
-                            <div class="text-muted" style="font-size:0.9rem;">
-                                @post.CreatedAt.ToLocalTime()
-                                @if (post.UpdatedAt != null)
+                        <div class="d-flex align-items-start gap-3">
+                            <a asp-controller="Profile" asp-action="Show" asp-route-id="@post.UserId" class="avatar-link">
+                                @if (hasProfileImg)
                                 {
-                                    <span> • edited</span>
+                                    <img src="@profileImg" class="avatar-img" alt="Profile photo" />
                                 }
+                                else
+                                {
+                                    <div class="avatar-circle">@initials</div>
+                                }
+                            </a>
+
+                            <div>
+                                <a class="post-author profile-link"
+                                   asp-controller="Profile"
+                                   asp-action="Show"
+                                   asp-route-id="@post.UserId">
+                                    @displayName
+                                </a>
+
+                                <div class="post-meta">
+                                    @post.CreatedAt.ToLocalTime()
+                                    @if (post.UpdatedAt != null)
+                                    {
+                                        <span> • edited</span>
+                                    }
+                                </div>
                             </div>
                         </div>
-
-                        @{
-                            bool isAdmin = User.IsInRole("Admin");
-                        }
 
                         @if (isOwner || isAdmin)
                         {
                             <div class="d-flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-success">Edit</a>
+                                @if (isOwner)
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@post.Id"
+                                       class="btn btn-sm btn-outline-success btn-pill">
+                                        Edit
+                                    </a>
+                                }
 
                                 <form asp-action="Delete" method="post" class="m-0">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@post.Id" />
-                                    <button class="btn btn-sm btn-danger">Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-pill">
+                                        Delete
+                                    </button>
                                 </form>
                             </div>
                         }
                     </div>
 
+                    <!-- Content -->
                     @if (!string.IsNullOrEmpty(post.Content))
                     {
-                        <p class="mb-3">@post.Content</p>
+                        <div class="post-content mt-3">@post.Content</div>
                     }
 
+                    <!-- Media -->
                     @if (!string.IsNullOrEmpty(post.ImagePath))
                     {
-                        <div class="mb-3">
-                            <img src="@post.ImagePath"
-                                 class="img-fluid rounded"
-                                 style="width:100%; object-fit:cover;" />
+                        <div class="media-wrap mt-3">
+                            <img src="@post.ImagePath" class="media-img" />
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(post.VideoPath))
                     {
-                        <div class="mb-3">
-                            <video controls class="w-100 rounded">
+                        <div class="media-wrap mt-3">
+                            <video controls class="media-video">
                                 <source src="@post.VideoPath" />
                             </video>
                         </div>
                     }
 
-                    @{
-                        var myReaction = ViewBag.MyReaction as MicroSocialPlatform.Models.Reaction;
-                        var counts = ViewBag.ReactionCounts as Dictionary<string, int>;
-                        var reactions = new[] { "Like", "Haha", "Love", "Dislike" };
-                    }
-
+                    <!-- Reactions -->
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <div class="d-flex gap-2 mb-3">
-
+                        <div class="d-flex flex-wrap gap-2 mt-3">
                             @foreach (var type in reactions)
                             {
-                                <form asp-action="React"
-                                      asp-controller="Posts"
-                                      method="post"
-                                      class="m-0">
-
+                                <form asp-action="React" asp-controller="Posts" method="post" class="m-0">
                                     <input type="hidden" name="postId" value="@post.Id" />
                                     <input type="hidden" name="type" value="@type" />
 
-                                    <button class="btn btn-sm
-                            @(myReaction?.Type == type ? "btn-primary" : "btn-outline-primary")">
+                                    <button type="submit" class="reaction-pill @(myReaction?.Type == type ? "active" : "")">
+                                        <span class="me-1">
+                                            @switch (type)
+                                            {
+                                                case "Like":
+                                                    <text>👍</text>
+                                                    ; break;
+                                                case "Haha":
 
-                                        @switch (type)
-                                        {
-                                            case "Like":
-                                                <text>👍</text>
-                                                ; break;
-                                            case "Haha":
+                                                    <text>😂</text>
+                                                    ; break;
+                                                case "Love":
 
-                                                <text>😂</text>
-                                                ; break;
-                                            case "Love":
+                                                    <text>❤️</text>
+                                                    ; break;
+                                                case "Dislike":
 
-                                                <text>❤️</text>
-                                                ; break;
-                                            case "Dislike":
-
-                                                <text>👎</text>
-                                                ; break;
-                                        }
-
-                                        @(counts != null && counts.ContainsKey(type) ? counts[type] : 0)
+                                                    <text>👎</text>
+                                                    ; break;
+                                            }
+                                        </span>
+                                        <span class="reaction-count">
+                                            @(counts != null && counts.ContainsKey(type) ? counts[type] : 0)
+                                        </span>
                                     </button>
                                 </form>
                             }
-
                         </div>
                     }
 
-
-                    <div class="d-flex justify-content-start">
-                        <a asp-action="Index" asp-controller="Posts" class="btn btn-sm btn-secondary">Back</a>
+                    <div class="d-flex justify-content-start mt-3">
+                        <a asp-action="Index" asp-controller="Posts" class="btn btn-sm btn-secondary">
+                            Back
+                        </a>
                     </div>
 
                 </div>
@@ -134,15 +165,15 @@
             <!-- ADD COMMENT -->
             @if (User.Identity.IsAuthenticated)
             {
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">Add comment</h5>
+                <div class="panel-card mb-4">
+                    <div class="panel-card-body">
+                        <div class="panel-title mb-3">Add comment</div>
 
                         <form asp-controller="Comments" asp-action="Create" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="postId" value="@post.Id" />
 
-                            <textarea name="content" class="form-control" rows="2"
+                            <textarea name="content" class="form-control comment-input" rows="2"
                                   placeholder="Write a comment..."></textarea>
 
                             <div class="d-flex justify-content-end mt-2">
@@ -154,13 +185,20 @@
             }
 
             <!-- COMMENTS -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">Comments (newest first)</h5>
+            <div class="panel-card mb-4">
+                <div class="panel-card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="panel-title">Comments</div>
+                        <div class="text-muted" style="font-size:.9rem;">newest first</div>
+                    </div>
 
                     @if (!comments.Any())
                     {
-                        <p class="text-muted mb-0">No comments yet.</p>
+                        <div class="empty-box">
+                            <div class="empty-icon">✦</div>
+                            <div class="empty-title">No comments yet</div>
+                            <div class="empty-text">Be the first to comment.</div>
+                        </div>
                     }
                     else
                     {
@@ -168,59 +206,309 @@
                         {
                             bool commentOwner = User.Identity.IsAuthenticated && c.UserId == myId;
 
-                            <div class="border rounded p-2 mb-2">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        @{
-                                            var cFullName = ((c.User?.FirstName ?? "") + " " + (c.User?.LastName ?? "")).Trim();
-                                            var cDisplayName = string.IsNullOrWhiteSpace(cFullName) ? "Unknown" : cFullName;
-                                        }
+                            var cFullName = ((c.User?.FirstName ?? "") + " " + (c.User?.LastName ?? "")).Trim();
+                            var cDisplayName = string.IsNullOrWhiteSpace(cFullName) ? (c.User?.UserName ?? "Unknown") : cFullName;
 
-                                        <b>@cDisplayName</b>
-                                        <div class="text-muted" style="font-size:0.9rem;">
-                                            @c.CreatedAt.ToLocalTime()
-                                            @if (c.UpdatedAt != null)
+                            var cProfileImg = c.User?.ProfileImagePath;
+                            bool cHasProfileImg =
+                            !string.IsNullOrWhiteSpace(cProfileImg) &&
+                            cProfileImg != "/images/profiles/default-profile.png";
+
+                            var cInitials = string.Join("",
+                            cDisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => s[0]).Take(2)).ToUpper();
+
+                            <div class="comment-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+
+                                    <div class="d-flex align-items-start gap-3">
+                                        <a asp-controller="Profile" asp-action="Show" asp-route-id="@c.UserId" class="avatar-link">
+                                            @if (cHasProfileImg)
                                             {
-                                                <span> • edited</span>
+                                                <img src="@cProfileImg" class="avatar-img avatar-sm" alt="Profile photo" />
                                             }
+                                            else
+                                            {
+                                                <div class="avatar-circle avatar-sm">@cInitials</div>
+                                            }
+                                        </a>
+
+                                        <div>
+                                            <a class="comment-author profile-link"
+                                               asp-controller="Profile"
+                                               asp-action="Show"
+                                               asp-route-id="@c.UserId">
+                                                @cDisplayName
+                                            </a>
+
+                                            <div class="comment-meta">
+                                                @c.CreatedAt.ToLocalTime()
+                                                @if (c.UpdatedAt != null)
+                                                {
+                                                    <span> • edited</span>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        @* Edit doar pentru owner *@
                                         @if (commentOwner)
                                         {
                                             <a asp-controller="Comments"
                                                asp-action="Edit"
                                                asp-route-id="@c.Id"
-                                               class="btn btn-sm btn-outline-success">
+                                               class="btn btn-sm btn-outline-success btn-pill">
                                                 Edit
                                             </a>
                                         }
-                                        @* Delete pentru owner sau admin *@
+
                                         @if (commentOwner || isAdmin)
                                         {
-                                            <form asp-controller="Comments"
-                                                  asp-action="Delete"
-                                                  method="post"
-                                                  class="m-0">
+                                            <form asp-controller="Comments" asp-action="Delete" method="post" class="m-0">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@c.Id" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-pill">
                                                     Delete
                                                 </button>
                                             </form>
                                         }
-                                        </div>
-                                    }
+                                    </div>
+
+
                                 </div>
 
-                                <div class="mt-2">@c.Content</div>
+                                <div class="comment-content mt-2">@c.Content</div>
                             </div>
                         }
-                    }             </div>
+                    }
+                </div>
             </div>
 
         </div>
     </div>
 </div>
+
+<style>
+    /* Pastreaza tema ta bej */
+    body {
+        background: #f6efe3;
+    }
+
+    /* Shared */
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .profile-link:hover {
+            text-decoration: underline;
+        }
+
+    .avatar-link {
+        display: inline-flex;
+        text-decoration: none;
+    }
+
+    .avatar-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(13,110,253,.95), rgba(111,66,193,.85));
+        box-shadow: 0 10px 20px rgba(13,110,253,.18);
+        flex: 0 0 auto;
+    }
+
+    .avatar-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+        flex: 0 0 auto;
+    }
+
+    .avatar-sm {
+        width: 34px;
+        height: 34px;
+    }
+
+    .avatar-circle.avatar-sm {
+        width: 34px;
+        height: 34px;
+        font-size: .85rem;
+    }
+
+    /* Post card */
+    .post-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+    }
+
+    .post-card-body {
+        padding: 16px;
+    }
+
+    .post-author {
+        font-weight: 800;
+        line-height: 1.1;
+        display: inline-block;
+    }
+
+    .post-meta {
+        color: #6c757d;
+        font-size: .88rem;
+        margin-top: 2px;
+    }
+
+    .post-content {
+        white-space: pre-wrap;
+        color: #111827;
+        font-size: 1rem;
+        line-height: 1.45;
+    }
+
+    .media-wrap {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,.06);
+        background: #fff;
+    }
+
+    .media-img {
+        width: 100%;
+        display: block;
+        object-fit: cover;
+    }
+
+    .media-video {
+        width: 100%;
+        display: block;
+    }
+
+    /* Reaction pills */
+    .reaction-pill {
+        border: 1px solid rgba(13,110,253,.22);
+        background: rgba(255,255,255,.85);
+        color: #111827;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: .9rem;
+        display: inline-flex;
+        align-items: center;
+        transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+
+        .reaction-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(0,0,0,.06);
+        }
+
+        .reaction-pill.active {
+            background: rgba(13,110,253,.12);
+            border-color: rgba(13,110,253,.35);
+        }
+
+    .reaction-count {
+        color: #374151;
+    }
+
+    /* Panels */
+    .panel-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .panel-card-body {
+        padding: 16px;
+    }
+
+    .panel-title {
+        font-weight: 800;
+    }
+
+    .comment-input {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.10);
+        background: rgba(255,255,255,.92);
+    }
+
+        .comment-input:focus {
+            border-color: rgba(13,110,253,.35);
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
+        }
+
+    /* Comments */
+    .comment-card {
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,.06);
+        background: rgba(255,255,255,.92);
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 8px 18px rgba(0,0,0,.04);
+    }
+
+    .comment-author {
+        font-weight: 800;
+        display: inline-block;
+    }
+
+    .comment-meta {
+        color: #6c757d;
+        font-size: .85rem;
+        margin-top: 2px;
+    }
+
+    .comment-content {
+        white-space: pre-wrap;
+    }
+
+    /* Empty */
+    .empty-box {
+        border-radius: 16px;
+        background: rgba(255,255,255,.85);
+        border: 1px dashed rgba(0,0,0,.12);
+        padding: 18px;
+        text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .empty-icon {
+        font-size: 1.4rem;
+        opacity: .9;
+        margin-bottom: 6px;
+    }
+
+    .empty-title {
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .empty-text {
+        color: #6c757d;
+    }
+
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+
+</style>

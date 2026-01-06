@@ -7,6 +7,7 @@ namespace MicroSocialPlatform.Models
         [Key]
         public int Id { get; set; }
 
+        [StringLength(1000, ErrorMessage = "Max. 1000 characters")]
         public string? Content { get; set; }
         public string? ImagePath { get; set; }
         public string? VideoPath { get; set; }

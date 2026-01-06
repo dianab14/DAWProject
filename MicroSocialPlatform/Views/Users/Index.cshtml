@@ -1,56 +1,211 @@
-﻿
-<br />
-<br />
+﻿@model IEnumerable<MicroSocialPlatform.Models.ApplicationUser>
 
-<div class="row">
-@foreach (var user in ViewBag.UsersList)
-{
-    <div class="col-4 mb-4">
-            <div class="card" style="height:100%; width: 100%;">
-        
-            <div class="card-body d-flex justify-content-between flex-column">
-                <div>
-                    <p><i class="bi bi-person"> </i> UserName: @user.UserName</p>
-
-                    <p><i class="bi bi-envelope"></i> Email: @user.Email</p>
-
-
-                    @if (@user.FirstName != null)
-                    {
-                            <p><i class="bi bi-person"> </i> First Name: @user.FirstName</p>
-                    }
-
-
-                    @if (@user.LastName != null)
-                    {
-                            <p><i class="bi bi-person"> </i> Last Name: @user.LastName</p>
-                    }
-
-
-                    @if (@user.PhoneNumber != null)
-                    {
-                            <p><i class="bi bi-phone"></i> Phone Number: @user.PhoneNumber</p>
-                    }
-
-                </div>
-                <div class="d-flex flex-row justify-content-between p-3">
-
-                    <div>
-                        <a asp-controller="Users" asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-success">Edit user</a>
-                    </div>
-
-                    <div>
-                        <a asp-controller="Users" asp-action="Show" asp-route-id="@user.Id" class="btn btn-sm btn-success">View user</a>
-                    </div>
-
-                </div>
-            </div>
-         </div>
-    </div>
+@{
+    ViewData["Title"] = "Users";
+    var users = ViewBag.UsersList as IEnumerable<MicroSocialPlatform.Models.ApplicationUser> ?? Enumerable.Empty<MicroSocialPlatform.Models.ApplicationUser>();
 }
-   
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Users</h2>
+
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-pill">
+            <i class="bi bi-arrow-left me-2"></i>Back
+        </a>
+    </div>
+
+    @if (!users.Any())
+    {
+        <div class="empty-box">
+            <div class="empty-icon">✦</div>
+            <div class="empty-title">No users found</div>
+            <div class="empty-text">Try adjusting filters or add new users.</div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var user in users)
+            {
+                <div class="col-12 col-md-6 col-lg-4 mb-4">
+                    <div class="user-card h-100">
+                        <div class="user-card-body d-flex flex-column">
+
+                            <!-- INFO -->
+                            <div>
+                                <div class="user-line">
+                                    <span class="user-icon"><i class="bi bi-person"></i></span>
+                                    <div>
+                                        <div class="user-label">Username</div>
+                                        <div class="user-value">@user.UserName</div>
+                                    </div>
+                                </div>
+
+                                <div class="user-divider"></div>
+
+                                <div class="user-line">
+                                    <span class="user-icon"><i class="bi bi-envelope"></i></span>
+                                    <div>
+                                        <div class="user-label">Email</div>
+                                        <div class="user-value">@user.Email</div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(user.FirstName))
+                                {
+                                    <div class="user-divider"></div>
+                                    <div class="user-line">
+                                        <span class="user-icon"><i class="bi bi-person-badge"></i></span>
+                                        <div>
+                                            <div class="user-label">First Name</div>
+                                            <div class="user-value">@user.FirstName</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(user.LastName))
+                                {
+                                    <div class="user-divider"></div>
+                                    <div class="user-line">
+                                        <span class="user-icon"><i class="bi bi-person-badge"></i></span>
+                                        <div>
+                                            <div class="user-label">Last Name</div>
+                                            <div class="user-value">@user.LastName</div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+                                {
+                                    <div class="user-divider"></div>
+                                    <div class="user-line">
+                                        <span class="user-icon"><i class="bi bi-phone"></i></span>
+                                        <div>
+                                            <div class="user-label">Phone Number</div>
+                                            <div class="user-value">@user.PhoneNumber</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- ACTIONS (mereu jos) -->
+                            <div class="mt-auto pt-3 d-flex justify-content-end gap-2">
+                                <a asp-controller="Users"
+                                   asp-action="Edit"
+                                   asp-route-id="@user.Id"
+                                   class="btn btn-sm btn-outline-success btn-pill">
+                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                </a>
+
+                                <a asp-controller="Users"
+                                   asp-action="Show"
+                                   asp-route-id="@user.Id"
+                                   class="btn btn-sm btn-primary btn-pill">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
-<br />
-<br />
+<style>
+    body {
+        background: #f6efe3;
+    }
 
+    .user-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .user-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .user-card-body {
+        padding: 20px;
+    }
+
+    .user-line {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .user-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d6efd;
+        background: rgba(13,110,253,.12);
+        flex: 0 0 auto;
+        font-size: 1.05rem;
+    }
+
+    .user-label {
+        font-weight: 800;
+        color: #111827;
+        line-height: 1.1;
+    }
+
+    .user-value {
+        color: #6c757d;
+        margin-top: 2px;
+        word-break: break-word;
+    }
+
+    .user-divider {
+        height: 1px;
+        background: rgba(0,0,0,.06);
+        border-radius: 999px;
+        margin: 14px 0;
+    }
+
+    .empty-box {
+        border-radius: 16px;
+        background: rgba(255,255,255,.85);
+        border: 1px dashed rgba(0,0,0,.12);
+        padding: 18px;
+        text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .empty-icon {
+        font-size: 1.4rem;
+        opacity: .9;
+        margin-bottom: 6px;
+    }
+
+    .empty-title {
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .empty-text {
+        color: #6c757d;
+    }
+
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>

@@ -1,55 +1,241 @@
 ﻿@model List<MicroSocialPlatform.Models.ApplicationUser>
 
-<h2 class="text-center">@ViewBag.Title</h2>
-
-@if (!Model.Any())
-{
-    <p class="text-center text-muted">No users found.</p>
+@{
+    // Titlul vine deja din ViewBag.Title la tine
+    string pageTitle = ViewBag.Title as string ?? "Users";
+    bool showRemoveFollower = ViewBag.ShowRemoveFollower == true;
+    bool showUnfollow = ViewBag.ShowUnfollow == true;
 }
-else
-{
-    @foreach (var user in Model)
-    {
-        <div class="card mb-2">
-            <div class="card-body d-flex align-items-center gap-3">
 
-                <img src="@user.ProfileImagePath"
-                     class="rounded-circle"
-                     width="50" height="50" />
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-                <div>
-                    <strong>@user.FirstName @user.LastName</strong><br />
-                    <small class="text-muted">@user.Description</small>
-                </div>
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">@pageTitle</h2>
 
-                @if (ViewBag.ShowRemoveFollower == true)
-                {
-                    <form asp-action="RemoveFollower" method="post" class="ms-auto">
-                        <input type="hidden" name="id" value="@user.Id" />
-                        <button class="btn btn-outline-danger btn-sm">
-                            Remove
-                        </button>
-                    </form>
-                }
-
-                @if (ViewBag.ShowUnfollow == true)
-                {
-                    <form asp-action="UnfollowFromList"
-                          method="post"
-                          class="ms-auto">
-                        <input type="hidden" name="id" value="@user.Id" />
-                        <button class="btn btn-outline-secondary btn-sm">
-                            Unfollow
-                        </button>
-                    </form>
-                }
-
-                <a asp-action="Show"
-                   asp-route-id="@user.Id"
-                   class="btn btn-outline-primary ms-auto">
-                    View profile
+                <a asp-action="Index" asp-controller="Profile" class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
                 </a>
             </div>
+
+            @if (!Model.Any())
+            {
+                <div class="empty-box">
+                    <div class="empty-icon">✦</div>
+                    <div class="empty-title">No users found</div>
+                    <div class="empty-text">Try again later or adjust your search.</div>
+                </div>
+            }
+            else
+            {
+                @foreach (var user in Model)
+                {
+                    var fullName = ((user.FirstName ?? "") + " " + (user.LastName ?? "")).Trim();
+                    var displayName = string.IsNullOrWhiteSpace(fullName) ? (user.UserName ?? "Unknown") : fullName;
+
+                    var profileImg = user.ProfileImagePath;
+                    bool hasProfileImg =
+                    !string.IsNullOrWhiteSpace(profileImg) &&
+                    profileImg != "/images/profiles/default-profile.png";
+
+                    var initials = string.Join("",
+                    displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s[0]).Take(2)).ToUpper();
+
+                    <div class="user-card mb-3">
+                        <div class="user-card-body d-flex align-items-center gap-3">
+
+                            <!-- Avatar -->
+                            <a asp-action="Show"
+                               asp-controller="Profile"
+                               asp-route-id="@user.Id"
+                               class="avatar-link">
+                                @if (hasProfileImg)
+                                {
+                                    <img src="@profileImg" class="avatar-img" alt="Profile photo" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-circle">@initials</div>
+                                }
+                            </a>
+
+                            <!-- Info -->
+                            <div class="flex-grow-1">
+                                <a asp-action="Show"
+                                   asp-controller="Profile"
+                                   asp-route-id="@user.Id"
+                                   class="user-name profile-link">
+                                    @displayName
+                                </a>
+
+                                @if (!string.IsNullOrWhiteSpace(user.Description))
+                                {
+                                    <div class="user-desc">@user.Description</div>
+                                }
+                                else
+                                {
+                                    <div class="user-desc text-muted">No description.</div>
+                                }
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+
+                                @if (showRemoveFollower)
+                                {
+                                    <form asp-action="RemoveFollower" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm btn-pill">
+                                            <i class="bi bi-person-x me-1"></i>Remove
+                                        </button>
+                                    </form>
+                                }
+
+                                @if (showUnfollow)
+                                {
+                                    <form asp-action="UnfollowFromList" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm btn-pill">
+                                            <i class="bi bi-person-dash me-1"></i>Unfollow
+                                        </button>
+                                    </form>
+                                }
+
+                                <a asp-action="Show"
+                                   asp-route-id="@user.Id"
+                                   class="btn btn-outline-primary btn-sm btn-pill">
+                                    <i class="bi bi-person-lines-fill me-1"></i>View
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                }
+            }
+
         </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background: #f6efe3;
     }
-}
+
+    /* Card */
+    .user-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .user-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .user-card-body {
+        padding: 14px 16px;
+    }
+
+    /* Links */
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .profile-link:hover {
+            text-decoration: underline;
+        }
+
+    .avatar-link {
+        display: inline-flex;
+        text-decoration: none;
+        flex: 0 0 auto;
+    }
+
+    /* Avatar */
+    .avatar-img {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+    }
+
+    .avatar-circle {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(13,110,253,.95), rgba(111,66,193,.85));
+        box-shadow: 0 10px 20px rgba(13,110,253,.18);
+    }
+
+    /* Text */
+    .user-name {
+        font-weight: 800;
+        line-height: 1.15;
+        display: inline-block;
+        margin-bottom: 2px;
+    }
+
+    .user-desc {
+        color: #6c757d;
+        font-size: .92rem;
+        line-height: 1.35;
+        max-width: 420px;
+    }
+
+    /* Empty state */
+    .empty-box {
+        border-radius: 16px;
+        background: rgba(255,255,255,.85);
+        border: 1px dashed rgba(0,0,0,.12);
+        padding: 26px 18px;
+        text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .empty-icon {
+        font-size: 1.4rem;
+        opacity: .9;
+        margin-bottom: 6px;
+    }
+
+    .empty-title {
+        font-weight: 800;
+        margin-bottom: 2px;
+        color: #111827;
+    }
+
+    .empty-text {
+        color: #6c757d;
+    }
+
+    /* Buttons */
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>

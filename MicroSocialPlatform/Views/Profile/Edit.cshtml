@@ -1,111 +1,233 @@
 ﻿@model MicroSocialPlatform.Models.ApplicationUser
 
-<h2 class="text-center mt-5">Edit profile</h2>
+@{
+    ViewData["Title"] = "Edit Profile";
+}
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-6 offset-3">
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-            <form method="post" asp-action="Edit" asp-controller="Profile" enctype="multipart/form-data">
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Edit Profile</h2>
 
-                <div asp-validation-summary="All" class="text-danger"></div>
+                <a asp-action="Show" asp-controller="Profile" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
 
-                <!-- Profile Picture-->
-                <div class="mb-3">
-                    <img id="profilePreview"
-                         src="@Model.ProfileImagePath"
-                         class="rounded-circle mb-3"
-                         width="120"
-                         height="120" />
+            <!-- CARD FORM -->
+            <div class="profile-edit-card">
+                <div class="profile-edit-card-body">
+
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <form method="post"
+                          asp-action="Edit"
+                          asp-controller="Profile"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <!-- PROFILE PHOTO -->
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div class="photo-wrap">
+                                <img id="profilePreview"
+                                     src="@Model.ProfileImagePath"
+                                     class="profile-photo"
+                                     alt="Profile photo" />
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <label class="form-label fw-semibold mb-2">
+                                    <i class="bi bi-image me-2"></i>Profile picture
+                                </label>
+
+                                <input type="file"
+                                       name="ProfileImage"
+                                       id="ProfileImage"
+                                       class="form-control input-soft"
+                                       accept="image/*"
+                                       onchange="previewImage(this)" />
+
+                                <input type="hidden" name="RemoveProfilePhoto" id="removePhotoFlag" value="false" />
+
+                                <!-- Buttons under input -->
+                                <div class="d-flex gap-2 mt-2">
+                                    <!-- Remove (always visible) -->
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-pill btn-sm"
+                                            onclick="removePhoto()">
+                                        <i class="bi bi-trash me-1"></i>Remove
+                                    </button>
+
+                                    <!-- Clear selection (optional, nice UX) -->
+                                    <button type="button"
+                                            id="clearSelectionBtn"
+                                            class="btn btn-outline-secondary btn-pill btn-sm"
+                                            onclick="clearSelectedFile()"
+                                            disabled>
+                                        <i class="bi bi-x-circle me-1"></i>Clear selection
+                                    </button>
+                                </div>
+
+                                <small class="text-muted d-block mt-2">
+                                    Recommended: square image, at least 256×256.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- FIRST NAME -->
+                        <div class="mb-3">
+                            <label asp-for="FirstName" class="form-label fw-semibold">
+                                <i class="bi bi-person me-2"></i>First Name
+                            </label>
+                            <input asp-for="FirstName" class="form-control input-soft" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <!-- LAST NAME -->
+                        <div class="mb-3">
+                            <label asp-for="LastName" class="form-label fw-semibold">
+                                <i class="bi bi-person me-2"></i>Last Name
+                            </label>
+                            <input asp-for="LastName" class="form-control input-soft" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-2"></i>Description
+                            </label>
+                            <textarea asp-for="Description"
+                                      class="form-control input-soft"
+                                      rows="4"
+                                      placeholder="Tell people a bit about you..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <!-- PRIVACY -->
+                        <div class="privacy-box mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsPrivate"
+                                       class="form-check-input"
+                                       type="checkbox"
+                                       id="isPrivateSwitch" />
+                                <label class="form-check-label fw-semibold" for="isPrivateSwitch">
+                                    <i class="bi bi-lock me-1"></i> Private account
+                                </label>
+                            </div>
+
+                            <small class="text-muted d-block mt-1">
+                                When enabled, only approved followers can see your posts.
+                            </small>
+                        </div>
+
+                        <!-- ACTIONS -->
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Show" asp-controller="Profile" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-pill">
+                                Cancel
+                            </a>
+
+                            <button class="btn btn-primary btn-pill" type="submit">
+                                <i class="bi bi-check2-circle me-2"></i>Save
+                            </button>
+                        </div>
+
+                    </form>
+
                 </div>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Profile picture</label>
-                    <input type="file"
-                           name="ProfileImage"
-                           id="ProfileImage"
-                           class="form-control"
-                           accept="image/*" 
-                           onchange="previewImage(this)" />
-
-                <input type="hidden" name="RemoveProfilePhoto" id="removePhotoFlag" value="false" />
-
-                @if (Model.ProfileImagePath != "/images/profiles/default-profile.png")
-                {
-
-                        <button type="button"
-                                class="btn btn-outline-danger btn-sm"
-                                onclick="removePhoto()">
-                            <i class="bi bi-trash"></i> Remove photo
-                        </button>
-                }
-                </div>
-
-                <br />
-
-                <!-- First Name -->
-                <div class="form-group">
-                    <label asp-for="FirstName" class="form-label">First Name</label>
-                    <br />
-                    <input asp-for="FirstName" class="form-control" />
-
-                    <span asp-validation-for="FirstName" class="text-danger"></span>
-
-                    <br /><br />
-                </div>
-
-                <!-- Last Name -->
-                <div class="form-group">
-                    <label asp-for="LastName" class="form-label">Last Name</label>
-                    <br />
-                    <input asp-for="LastName" class="form-control" />
-
-                    <span asp-validation-for="LastName" class="text-danger"></span>
-
-                    <br /><br />
-                </div>
-
-                <!-- Description -->
-                <div class="form-group">
-                    <label asp-for="Description" class="form-label">Description</label>
-                    <br />
-                    <textarea asp-for="Description" class="form-control"></textarea>
-
-                    <span asp-validation-for="Description" class="text-danger"></span>
-
-                    <br /><br />
-                </div>
-
-                <!-- Profile visibility -->
-                <div class="mb-4">
-                    <div class="form-check form-switch">
-                        <input asp-for="IsPrivate"
-                               class="form-check-input"
-                               type="checkbox"
-                               id="isPrivateSwitch" />
-
-                        <label class="form-check-label" for="isPrivateSwitch">
-                            <i class="bi bi-lock me-1"></i> Private account
-                        </label>
-                    </div>
-
-                    <small class="text-muted">
-                        When enabled, only approved followers can see your posts.
-                    </small>
-                </div>
-
-
-                <button class="btn btn-sm btn-success" type="submit">
-                    Save
-                </button>
-
-            </form>
         </div>
     </div>
 </div>
 
+<style>
+    body {
+        background: #f6efe3;
+    }
+
+    .profile-edit-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .profile-edit-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .profile-edit-card-body {
+        padding: 20px;
+    }
+
+    .photo-wrap {
+        width: 92px;
+        height: 92px;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+        flex: 0 0 auto;
+    }
+
+    .profile-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .input-soft {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.10);
+        background: rgba(255,255,255,.92);
+    }
+
+        .input-soft:focus {
+            border-color: rgba(13,110,253,.35);
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
+        }
+
+    .privacy-box {
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,.06);
+        background: rgba(255,255,255,.88);
+        padding: 12px 14px;
+        box-shadow: 0 8px 18px rgba(0,0,0,.04);
+    }
+
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>
+
 @section Scripts {
     <script>
+        const DEFAULT_IMG = "/images/profiles/default-profile.png";
+
+        function setClearBtnState() {
+            const input = document.getElementById("ProfileImage");
+            const btn = document.getElementById("clearSelectionBtn");
+            if (!btn || !input) return;
+            btn.disabled = !(input.files && input.files.length > 0);
+        }
+
         function previewImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -113,21 +235,43 @@
                     document.getElementById("profilePreview").src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
+
+                // daca userul a ales o poza noua, nu mai cerem remove pe server
+                const flag = document.getElementById("removePhotoFlag");
+                if (flag) flag.value = "false";
             }
+            setClearBtnState();
         }
 
         function removePhoto() {
-            // preview = default
-            document.getElementById("profilePreview").src =
-                "/images/profiles/default-profile.png";
+            // preview default
+            document.getElementById("profilePreview").src = DEFAULT_IMG;
 
             // stergem fisierul selectat, daca era
-            document.getElementById("ProfileImage").value = "";
+            const input = document.getElementById("ProfileImage");
+            if (input) input.value = "";
 
-            // spunem serverului ce vrem
+            // spunem serverului sa revina la default
             document.getElementById("removePhotoFlag").value = "true";
+            setClearBtnState();
         }
 
+        function clearSelectedFile() {
+            // doar sterge selectia curenta, fara sa ceara remove pe server
+            const input = document.getElementById("ProfileImage");
+            if (input) input.value = "";
 
+            // revenim la poza existenta (de pe server), nu la default
+            document.getElementById("profilePreview").src = "@Model.ProfileImagePath";
+
+            // nu cerem remove
+            const flag = document.getElementById("removePhotoFlag");
+            if (flag) flag.value = "false";
+
+            setClearBtnState();
+        }
+
+        // init
+        setClearBtnState();
     </script>
 }

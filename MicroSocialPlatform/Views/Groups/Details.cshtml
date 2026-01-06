@@ -1,309 +1,597 @@
 ﻿@using System.Security.Claims
+@using MicroSocialPlatform.Models
 @{
-    var group = ViewBag.Group as MicroSocialPlatform.Models.Group;
-    var myMembership = ViewBag.MyMembership as MicroSocialPlatform.Models.GroupMembership;
-    var members = ViewBag.Members as List<MicroSocialPlatform.Models.GroupMembership> ?? new List<MicroSocialPlatform.Models.GroupMembership>();
-    var pending = ViewBag.Pending as List<MicroSocialPlatform.Models.GroupMembership> ?? new List<MicroSocialPlatform.Models.GroupMembership>();
-    var messages = ViewBag.Messages as List<MicroSocialPlatform.Models.GroupMessage> ?? new List<MicroSocialPlatform.Models.GroupMessage>();
+    ViewData["Title"] = "Group details";
+
+    var group = ViewBag.Group as Group;
+    var myMembership = ViewBag.MyMembership as GroupMembership;
+    var members = ViewBag.Members as List<GroupMembership> ?? new();
+    var pending = ViewBag.Pending as List<GroupMembership> ?? new();
+    var messages = ViewBag.Messages as List<GroupMessage> ?? new();
 
     var myId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     bool isModerator = group.ModeratorId == myId;
     bool isAcceptedMember = (myMembership != null && myMembership.Status == "Accepted");
+    bool isAdmin = User.IsInRole("Admin");
 
+    var modFullName = ((group.Moderator?.FirstName ?? "") + " " + (group.Moderator?.LastName ?? "")).Trim();
+    var modDisplay = string.IsNullOrWhiteSpace(modFullName)
+        ? (group.Moderator?.UserName ?? "Unknown")
+        : modFullName;
+
+    var modProfileImg = group.Moderator?.ProfileImagePath;
+    bool modHasProfileImg =
+        !string.IsNullOrWhiteSpace(modProfileImg) &&
+        modProfileImg != "/images/profiles/default-profile.png";
+
+    var modInitials = string.Join("",
+        modDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0]).Take(2)).ToUpper();
 }
 
-<h2>Group details</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card" style="width:100%;">
-            <div class="card-body d-flex justify-content-between flex-column">
-                <div>
-                    <p>
-                        <i class="bi bi-people"></i>
-                        <b>Group name:</b> @group.Name
-                    </p>
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Group details</h2>
 
-                    <p>
-                        <i class="bi bi-card-text"></i>
-                        <b>Description:</b> @group.Description
-                    </p>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back to groups
+                </a>
+            </div>
 
-                    @{
-                        var modFullName = ((group.Moderator?.FirstName ?? "") + " " + (group.Moderator?.LastName ?? "")).Trim();
-                        var modDisplay = string.IsNullOrWhiteSpace(modFullName) ? "Unknown" : modFullName;
-                    }
+            <!-- GROUP CARD -->
+            <div class="group-card mb-4">
+                <div class="group-card-body">
 
-                    <p>
-                        <i class="bi bi-person-badge"></i>
-                        <b>Moderator:</b> @modDisplay
-                    </p>
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div class="flex-grow-1">
+                            <div class="group-title">
+                                <i class="bi bi-people me-2"></i>@group.Name
+                            </div>
 
+                            <div class="group-subtitle mt-2">
+                                <i class="bi bi-card-text me-2"></i>@group.Description
+                            </div>
 
-                    <p>
-                        <i class="bi bi-calendar-event"></i>
-                        <b>Created:</b> @group.CreatedAt.ToLocalTime()
-                    </p>
+                            <div class="group-meta mt-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <a asp-controller="Profile" asp-action="Show" asp-route-id="@group.ModeratorId" class="avatar-link">
+                                        @if (modHasProfileImg)
+                                        {
+                                            <img src="@modProfileImg" class="avatar-img" alt="Profile photo" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle">@modInitials</div>
+                                        }
+                                    </a>
 
-                    @if (myMembership != null)
-                    {
-                        <p>
-                            <i class="bi bi-info-circle"></i>
-                            <b>My status:</b> @myMembership.Status
-                        </p>
-                    }
-                </div>
+                                    <div>
+                                        <div class="meta-line">
+                                            <i class="bi bi-person-badge me-2"></i>
+                                            <span class="meta-label">Moderator:</span>
+                                            <a asp-controller="Profile" asp-action="Show" asp-route-id="@group.ModeratorId" class="profile-link fw-semibold">
+                                                @modDisplay
+                                            </a>
+                                        </div>
+                                        <div class="meta-line">
+                                            <i class="bi bi-calendar-event me-2"></i>
+                                            <span class="meta-label">Created:</span> @group.CreatedAt.ToLocalTime()
+                                        </div>
 
-                <div class="d-flex flex-row justify-content-between align-items-center mt-3">
-                    <div>
-                        <a asp-action="Index" class="btn btn-sm btn-secondary">Back to groups</a>
-                    </div>
+                                        @if (myMembership != null)
+                                        {
+                                            <div class="meta-line">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                <span class="meta-label">My status:</span>
+                                                <span class="badge @GetStatusBadge(myMembership.Status)">@myMembership.Status</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="d-flex gap-2">
-                        @* JOIN *@
-                        @if (myMembership == null)
-                        {
-                            <form asp-action="Join" method="post" class="m-0">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="groupId" value="@group.Id" />
-                                <button type="submit" class="btn btn-sm btn-primary">Join</button>
-                            </form>
-                        }
-                        else
-                        {
-                            @* LEAVE *@
-                            @if (!isModerator)
+                        <!-- ACTIONS -->
+                        <div class="d-flex flex-column gap-2 align-items-end">
+                            @* JOIN *@
+                            @if (myMembership == null)
                             {
-                                <form asp-action="Leave" method="post" class="m-0">
+                                <form asp-action="Join" method="post" class="m-0">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="groupId" value="@group.Id" />
-                                    <button type="submit" class="btn btn-sm btn-warning">Leave</button>
+                                    <button type="submit" class="btn btn-primary btn-pill btn-pill-sm">
+                                        <i class="bi bi-person-plus me-2"></i>Join
+                                    </button>
                                 </form>
                             }
-                        }
+                            else
+                            {
+                                @* LEAVE *@
+                                @if (!isModerator)
+                                {
+                                    <form asp-action="Leave" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="groupId" value="@group.Id" />
+                                        <button type="submit" class="btn btn-outline-warning btn-pill btn-pill-sm">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Leave
+                                        </button>
+                                    </form>
+                                }
+                            }
 
-                        @* DELETE GROUP *@
-                        @if (isModerator || User.IsInRole("Admin"))
-                        {
-                            <form asp-action="Delete" method="post" class="m-0">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@group.Id" />
-                                <button type="submit" class="btn btn-sm btn-danger">Delete group</button>
-                            </form>
-                        }
-                        @* EDIT GROUP *@
-                        @if (isModerator)
-                        {
-                            <a asp-action="Edit" asp-route-id="@group.Id" class="btn btn-sm btn-success">Edit group</a>
-                        }
+                            @* EDIT GROUP *@
+                            @if (isModerator)
+                            {
+                                <a asp-action="Edit" asp-route-id="@group.Id" class="btn btn-outline-success btn-pill btn-pill-sm">
+                                    <i class="bi bi-pencil me-2"></i>Edit
+                                </a>
+                            }
 
+                            @* DELETE GROUP *@
+                            @if (isModerator || isAdmin)
+                            {
+                                <form asp-action="Delete" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@group.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-pill btn-pill-sm">
+                                        <i class="bi bi-trash me-2"></i>Delete
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ROW: PENDING + MEMBERS -->
+            <div class="row">
+
+                <!-- PENDING -->
+                @if (isModerator)
+                {
+                    <div class="col-12 col-lg-6 mb-4">
+                        <div class="panel-card h-100">
+                            <div class="panel-card-body">
+                                <div class="panel-title mb-3">
+                                    <i class="bi bi-person-plus me-2"></i>Pending requests
+                                </div>
+
+                                @if (!pending.Any())
+                                {
+                                    <div class="empty-box py-3">
+                                        <div class="empty-title">No pending requests</div>
+                                        <div class="empty-text">Requests will appear here.</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var p in pending)
+                                    {
+                                        var pFullName = ((p.User?.FirstName ?? "") + " " + (p.User?.LastName ?? "")).Trim();
+                                        var pDisplay = string.IsNullOrWhiteSpace(pFullName) ? (p.User?.UserName ?? "Unknown") : pFullName;
+
+                                        var pProfileImg = p.User?.ProfileImagePath;
+                                        bool pHasProfileImg =
+                                        !string.IsNullOrWhiteSpace(pProfileImg) &&
+                                        pProfileImg != "/images/profiles/default-profile.png";
+
+                                        var pInitials = string.Join("",
+                                        pDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0]).Take(2)).ToUpper();
+
+                                        <div class="item-row">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a asp-controller="Profile" asp-action="Show" asp-route-id="@p.UserId" class="avatar-link">
+                                                    @if (pHasProfileImg)
+                                                    {
+                                                        <img src="@pProfileImg" class="avatar-img avatar-sm" alt="Profile photo" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="avatar-circle avatar-sm">@pInitials</div>
+                                                    }
+                                                </a>
+
+                                                <a asp-controller="Profile" asp-action="Show" asp-route-id="@p.UserId" class="profile-link fw-semibold">
+                                                    @pDisplay
+                                                </a>
+                                            </div>
+
+                                            <div class="d-flex gap-2">
+                                                <form asp-action="Accept" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="groupId" value="@group.Id" />
+                                                    <input type="hidden" name="membershipId" value="@p.Id" />
+                                                    <button class="btn btn-sm btn-outline-success btn-pill btn-pill-sm">Accept</button>
+                                                </form>
+
+                                                <form asp-action="Reject" method="post" class="m-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="groupId" value="@group.Id" />
+                                                    <input type="hidden" name="membershipId" value="@p.Id" />
+                                                    <button class="btn btn-sm btn-outline-danger btn-pill btn-pill-sm">Reject</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- MEMBERS -->
+                <div class="col-12 col-lg-6 mb-4">
+                    <div class="panel-card h-100">
+                        <div class="panel-card-body">
+                            <div class="panel-title mb-3">
+                                <i class="bi bi-people me-2"></i>Members
+                            </div>
+
+                            @if (!members.Any())
+                            {
+                                <div class="empty-box py-3">
+                                    <div class="empty-title">No members yet</div>
+                                    <div class="empty-text">Members will appear here.</div>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var m in members)
+                                {
+                                    var mFullName = ((m.User?.FirstName ?? "") + " " + (m.User?.LastName ?? "")).Trim();
+                                    var mDisplay = string.IsNullOrWhiteSpace(mFullName) ? (m.User?.UserName ?? "Unknown") : mFullName;
+
+                                    var mProfileImg = m.User?.ProfileImagePath;
+                                    bool mHasProfileImg =
+                                    !string.IsNullOrWhiteSpace(mProfileImg) &&
+                                    mProfileImg != "/images/profiles/default-profile.png";
+
+                                    var mInitials = string.Join("",
+                                    mDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0]).Take(2)).ToUpper();
+
+                                    <div class="item-row">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <a asp-controller="Profile" asp-action="Show" asp-route-id="@m.UserId" class="avatar-link">
+                                                @if (mHasProfileImg)
+                                                {
+                                                    <img src="@mProfileImg" class="avatar-img avatar-sm" alt="Profile photo" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="avatar-circle avatar-sm">@mInitials</div>
+                                                }
+                                            </a>
+
+                                            <div>
+                                                <a asp-controller="Profile" asp-action="Show" asp-route-id="@m.UserId" class="profile-link fw-semibold">
+                                                    @mDisplay
+                                                </a>
+
+                                                @if (m.UserId == group.ModeratorId)
+                                                {
+                                                    <span class="badge bg-secondary ms-2">Moderator</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        @if (isModerator && m.UserId != group.ModeratorId)
+                                        {
+                                            <form asp-action="RemoveMember" method="post" class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="groupId" value="@group.Id" />
+                                                <input type="hidden" name="membershipId" value="@m.Id" />
+                                                <button class="btn btn-sm btn-outline-danger btn-pill btn-pill-sm">Remove</button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
                     </div>
                 </div>
 
             </div>
-        </div>
-    </div>
-</div>
 
-<div class="row">
+            <!-- MESSAGES -->
+            <div class="panel-card mb-4">
+                <div class="panel-card-body">
+                    <div class="panel-title mb-3">
+                        <i class="bi bi-chat-dots me-2"></i>Messages
+                    </div>
 
-    @* PENDING REQUESTS (doar moderator) *@
-    @if (isModerator)
-    {
-        <div class="col-12 col-lg-6 mb-4">
-            <div class="card" style="height:100%;">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-person-plus"></i> Pending requests
-                    </h5>
-
-                    @if (!pending.Any())
+                    @if (isAcceptedMember)
                     {
-                        <p class="text-muted mb-0">No pending requests.</p>
+                        <form asp-controller="GroupMessages" asp-action="Create" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="groupId" value="@group.Id" />
+
+                            <textarea name="content" class="form-control input-soft" rows="3"
+                                  placeholder="Write a message..."></textarea>
+
+                            <div class="d-flex justify-content-end mt-2">
+                                <button class="btn btn-primary btn-pill btn-pill-sm">
+                                    <i class="bi bi-send me-2"></i>Send
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr />
                     }
                     else
                     {
-                        @foreach (var p in pending)
+                        <div class="empty-box">
+                            <div class="empty-title">You cannot post messages yet</div>
+                            <div class="empty-text">You can send messages only after you are accepted in this group.</div>
+                        </div>
+                        <hr />
+                    }
+
+                    @if (!messages.Any())
+                    {
+                        <div class="empty-box py-3">
+                            <div class="empty-title">No messages yet</div>
+                            <div class="empty-text">Start the conversation.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var msg in messages)
                         {
-                            <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
-                                <div>
-                                    <i class="bi bi-person"></i>
-                                    @{
-                                        var pFullName = ((p.User?.FirstName ?? "") + " " + (p.User?.LastName ?? "")).Trim();
-                                        var pDisplay = string.IsNullOrWhiteSpace(pFullName) ? "Unknown" : pFullName;
+                            var msgFullName = ((msg.User?.FirstName ?? "") + " " + (msg.User?.LastName ?? "")).Trim();
+                            var msgDisplay = string.IsNullOrWhiteSpace(msgFullName) ? (msg.User?.UserName ?? "Unknown") : msgFullName;
+
+                            var msgProfileImg = msg.User?.ProfileImagePath;
+                            bool msgHasProfileImg =
+                            !string.IsNullOrWhiteSpace(msgProfileImg) &&
+                            msgProfileImg != "/images/profiles/default-profile.png";
+
+                            var msgInitials = string.Join("",
+                            msgDisplay.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0]).Take(2)).ToUpper();
+
+                            bool canManageMessage = (isAcceptedMember && (msg.UserId == myId || isModerator)) || isAdmin;
+
+                            <div class="message-card">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <a asp-controller="Profile" asp-action="Show" asp-route-id="@msg.UserId" class="avatar-link">
+                                            @if (msgHasProfileImg)
+                                            {
+                                                <img src="@msgProfileImg" class="avatar-img avatar-sm" alt="Profile photo" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-circle avatar-sm">@msgInitials</div>
+                                            }
+                                        </a>
+
+                                        <div>
+                                            <a asp-controller="Profile" asp-action="Show" asp-route-id="@msg.UserId"
+                                               class="profile-link fw-semibold">
+                                                @msgDisplay
+                                            </a>
+
+                                            <div class="text-muted" style="font-size:.85rem;">
+                                                @msg.SentAt.ToLocalTime()
+                                                @if (msg.UpdatedAt != null)
+                                                {
+                                                    <span> • edited</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if (canManageMessage)
+                                    {
+                                        <div class="d-flex gap-2">
+                                            @if (msg.UserId == myId)
+                                            {
+                                                <a asp-controller="GroupMessages"
+                                                   asp-action="Edit"
+                                                   asp-route-id="@msg.Id"
+                                                   class="btn btn-sm btn-outline-success btn-pill btn-pill-sm">
+                                                    Edit
+                                                </a>
+                                            }
+
+                                            <form asp-controller="GroupMessages" asp-action="Delete" method="post" class="m-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@msg.Id" />
+                                                <button class="btn btn-sm btn-outline-danger btn-pill btn-pill-sm">Delete</button>
+                                            </form>
+                                        </div>
                                     }
-                                    @pDisplay
-
                                 </div>
 
-                                <div class="d-flex gap-2">
-                                    <form asp-action="Accept" method="post" class="m-0">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="groupId" value="@group.Id" />
-                                        <input type="hidden" name="membershipId" value="@p.Id" />
-                                        <button class="btn btn-sm btn-success">Accept</button>
-                                    </form>
-
-                                    <form asp-action="Reject" method="post" class="m-0">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="groupId" value="@group.Id" />
-                                        <input type="hidden" name="membershipId" value="@p.Id" />
-                                        <button class="btn btn-sm btn-outline-danger">Reject</button>
-                                    </form>
-                                </div>
+                                <div class="message-content mt-2">@msg.Content</div>
                             </div>
                         }
                     }
                 </div>
             </div>
+
         </div>
+    </div>
+</div>
+
+@functions {
+    public string GetStatusBadge(string status)
+    {
+        return status switch
+        {
+            "Accepted" => "bg-success",
+            "Pending" => "bg-warning text-dark",
+            "Rejected" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+<style>
+    body {
+        background: #f6efe3;
     }
 
-    @* MEMBERS *@
-    <div class="col-12 col-lg-6 mb-4">
-        <div class="card" style="height:100%;">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-people"></i> Members
-                </h5>
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
 
-                @if (!members.Any())
-                {
-                    <p class="text-muted mb-0">No members yet.</p>
-                }
-                else
-                {
-                    @foreach (var m in members)
-                    {
-                        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
-                            <div>
-                                <i class="bi bi-person"></i>
-                                @{
-                                    var mFullName = ((m.User?.FirstName ?? "") + " " + (m.User?.LastName ?? "")).Trim();
-                                    var mDisplay = string.IsNullOrWhiteSpace(mFullName) ? "Unknown" : mFullName;
-                                }
-                                @mDisplay
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
 
-                                @if (m.UserId == group.ModeratorId)
-                                {
-                                    <span class="badge bg-secondary ms-2">Moderator</span>
-                                }
-                            </div>
+    .btn-pill-sm {
+        padding: .35rem .75rem;
+    }
 
-                            @if (isModerator && m.UserId != group.ModeratorId)
-                            {
-                                <form asp-action="RemoveMember" method="post" class="m-0">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="groupId" value="@group.Id" />
-                                    <input type="hidden" name="membershipId" value="@m.Id" />
-                                    <button class="btn btn-sm btn-outline-danger">Remove</button>
-                                </form>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
+    }
 
-</div>
+        .profile-link:hover {
+            text-decoration: underline;
+        }
 
-<div class="row">
+    .avatar-link {
+        display: inline-flex;
+        text-decoration: none;
+    }
 
-    @* SEND MESSAGE *@
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-chat-dots"></i> Messages
-                </h5>
+    .avatar-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(13,110,253,.95), rgba(111,66,193,.85));
+        box-shadow: 0 10px 20px rgba(13,110,253,.18);
+        flex: 0 0 auto;
+    }
 
-                @if (myMembership != null && myMembership.Status == "Accepted")
-                {
-                    <form asp-controller="GroupMessages" asp-action="Create" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="groupId" value="@group.Id" />
+    .avatar-img {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+        flex: 0 0 auto;
+    }
 
-                        <div class="mb-2">
-                            <textarea name="content" class="form-control" rows="3" placeholder="Write a message..."></textarea>
-                        </div>
+    .avatar-sm {
+        width: 34px;
+        height: 34px;
+    }
 
-						<button class="btn btn-sm btn-primary mt-2">Send</button>
-                        @* <button class="btn btn-sm btn-primary">Send</button> *@
-                    </form>
-                    
+    .avatar-circle.avatar-sm {
+        width: 34px;
+        height: 34px;
+        font-size: .85rem;
+    }
 
+    .group-card, .panel-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+    }
 
-                    <hr />
-                }
-                else
-                {
-                    <p class="text-muted">
-                        You can send messages only after you are accepted in this group.
-                    </p>
-                    <hr />
-                }
+    .group-card-body, .panel-card-body {
+        padding: 20px;
+    }
 
-                @* LISTA MESAJE *@
-                @if (!messages.Any())
-                {
-                    <p class="text-muted mb-0">No messages yet.</p>
-                }
-                else
-                {
-                    @foreach (var msg in messages)
-                    {
-                        <div class="border rounded p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-person-circle"></i>
-                                    @{
-                                        var msgFullName = ((msg.User?.FirstName ?? "") + " " + (msg.User?.LastName ?? "")).Trim();
-                                        var msgDisplay = string.IsNullOrWhiteSpace(msgFullName) ? "Unknown" : msgFullName;
-                                    }
-                                    <b>@msgDisplay</b>
+    .group-title {
+        font-weight: 800;
+        color: #111827;
+        font-size: 1.35rem;
+        line-height: 1.2;
+    }
 
-                                    <span class="text-muted"> • @msg.SentAt.ToLocalTime()</span>
+    .group-subtitle {
+        color: #6c757d;
+        font-size: .98rem;
+        line-height: 1.5;
+    }
 
-                                    @if (msg.UpdatedAt != null)
-                                    {
-                                        <span class="text-muted"> (edited)</span>
-                                    }
-                                </div>
+    .group-meta .meta-line {
+        color: #6c757d;
+        font-size: .92rem;
+        margin-top: 6px;
+    }
 
-                                @{
-                                    bool isAdmin = User.IsInRole("Admin");
-                                }
+    .meta-label {
+        font-weight: 700;
+        color: #3a3a3a;
+    }
 
-                                @if ((isAcceptedMember && (msg.UserId == myId || isModerator)) || isAdmin)
-                                {
-                                    <div class="d-flex gap-2">
-                                    @if(msg.UserId == myId)
-                                    {
-											<a asp-controller="GroupMessages"
-											   asp-action="Edit"
-											   asp-route-id="@msg.Id"
-											   class="btn btn-sm btn-success">
-												Edit
-											</a>
-                                    }
-                                    <form asp-controller="GroupMessages" asp-action="Delete" method="post" class="m-0">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@msg.Id" />
-                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
-                                    </div>
-                                }
-                            </div>
+    .panel-title {
+        font-weight: 800;
+    }
 
-                            <div class="mt-2">
-                                @msg.Content
-                            </div>
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-    </div>
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 8px 18px rgba(0,0,0,.04);
+        margin-bottom: 10px;
+    }
 
-</div>
+    .message-card {
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,.06);
+        background: rgba(255,255,255,.92);
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 8px 18px rgba(0,0,0,.04);
+    }
+
+    .message-content {
+        white-space: pre-wrap;
+    }
+
+    .empty-box {
+        border-radius: 16px;
+        background: rgba(255,255,255,.85);
+        border: 1px dashed rgba(0,0,0,.12);
+        padding: 18px;
+        text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .empty-title {
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .empty-text {
+        color: #6c757d;
+    }
+
+    .input-soft {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.10);
+        background: rgba(255,255,255,.92);
+    }
+
+        .input-soft:focus {
+            border-color: rgba(13,110,253,.35);
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
+        }
+</style>

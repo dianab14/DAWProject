@@ -1,37 +1,200 @@
 ﻿@model List<Follow>
 
-<h2>Follow requests</h2>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-@if (!Model.Any())
-{
-    <p>No pending requests.</p>
-}
-else
-{
-    @foreach (var req in Model)
-    {
-        <div class="card mb-3">
-            <div class="card-body">
-                <strong>
-                    @req.Follower.FirstName @req.Follower.LastName
-                </strong>
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Follow Requests</h2>
 
-                <div class="mt-2">
-                    <form asp-action="Accept" method="post" class="d-inline">
-                        <input type="hidden" name="id" value="@req.Id" />
-                        <button class="btn btn-success btn-sm">
-                            Accept
-                        </button>
-                    </form>
-
-                    <form asp-action="Decline" method="post" class="d-inline">
-                        <input type="hidden" name="id" value="@req.Id" />
-                        <button class="btn btn-danger btn-sm">
-                            Decline
-                        </button>
-                    </form>
-                </div>
+                <a asp-action="Index" asp-controller="Profile" class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
             </div>
+
+            @if (!Model.Any())
+            {
+                <div class="empty-box">
+                    <div class="empty-icon">✦</div>
+                    <div class="empty-title">No pending requests</div>
+                    <div class="empty-text">You don't have any follow requests at the moment.</div>
+                </div>
+            }
+            else
+            {
+                @foreach (var req in Model)
+                {
+                    var user = req.Follower;
+                    var fullName = ((user.FirstName ?? "") + " " + (user.LastName ?? "")).Trim();
+                    var displayName = string.IsNullOrWhiteSpace(fullName) ? (user.UserName ?? "Unknown") : fullName;
+
+                    <div class="user-card mb-3">
+                        <div class="user-card-body d-flex align-items-center gap-3">
+
+                            <!-- Avatar -->
+                            <a asp-action="Show"
+                               asp-controller="Profile"
+                               asp-route-id="@user.Id"
+                               class="avatar-link">
+                                <img src="@user.ProfileImagePath" class="avatar-img" alt="Profile photo" />
+                            </a>
+
+                            <!-- Info -->
+                            <div class="flex-grow-1">
+                                <a asp-action="Show"
+                                   asp-controller="Profile"
+                                   asp-route-id="@user.Id"
+                                   class="user-name profile-link">
+                                    @displayName
+                                </a>
+
+                                @if (!string.IsNullOrWhiteSpace(user.Description))
+                                {
+                                    <div class="user-desc">@user.Description</div>
+                                }
+                                else
+                                {
+                                    <div class="user-desc text-muted">No description.</div>
+                                }
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <form asp-action="Accept" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@req.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm btn-pill">
+                                        <i class="bi bi-check-circle me-1"></i>Accept
+                                    </button>
+                                </form>
+
+                                <form asp-action="Decline" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@req.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm btn-pill">
+                                        <i class="bi bi-x-circle me-1"></i>Decline
+                                    </button>
+                                </form>
+
+                                <a asp-action="Show"
+                                   asp-controller="Profile"
+                                   asp-route-id="@user.Id"
+                                   class="btn btn-outline-primary btn-sm btn-pill">
+                                    <i class="bi bi-person-lines-fill me-1"></i>View
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                }
+            }
+
         </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background: #f6efe3;
     }
-}
+
+    /* Card */
+    .user-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .user-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .user-card-body {
+        padding: 14px 16px;
+    }
+
+    /* Links */
+    .profile-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .profile-link:hover {
+            text-decoration: underline;
+        }
+
+    .avatar-link {
+        display: inline-flex;
+        text-decoration: none;
+        flex: 0 0 auto;
+    }
+
+    /* Avatar */
+    .avatar-img {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,.9);
+        box-shadow: 0 10px 20px rgba(0,0,0,.10);
+        background: #fff;
+    }
+
+    /* Text */
+    .user-name {
+        font-weight: 800;
+        line-height: 1.15;
+        display: inline-block;
+        margin-bottom: 2px;
+    }
+
+    .user-desc {
+        color: #6c757d;
+        font-size: .92rem;
+        line-height: 1.35;
+        max-width: 420px;
+    }
+
+    /* Empty state */
+    .empty-box {
+        border-radius: 16px;
+        background: rgba(255,255,255,.85);
+        border: 1px dashed rgba(0,0,0,.12);
+        padding: 26px 18px;
+        text-align: center;
+        box-shadow: 0 10px 22px rgba(0,0,0,.05);
+    }
+
+    .empty-icon {
+        font-size: 1.4rem;
+        opacity: .9;
+        margin-bottom: 6px;
+    }
+
+    .empty-title {
+        font-weight: 800;
+        margin-bottom: 2px;
+        color: #111827;
+    }
+
+    .empty-text {
+        color: #6c757d;
+    }
+
+    /* Buttons */
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>

@@ -1,25 +1,118 @@
 ﻿@model MicroSocialPlatform.Models.Group
 
-<h2>Edit group</h2>
+@{
+    ViewData["Title"] = "Edit Group";
+}
 
-<div asp-validation-summary="All" class="text-danger"></div>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-<form asp-action="Edit" method="post">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Edit Group</h2>
 
-    <div class="mb-3">
-        <label class="form-label">Name</label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
+
+            <!-- CARD FORM -->
+            <div class="group-card">
+                <div class="group-card-body">
+
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+
+                        <!-- NAME -->
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">
+                                <i class="bi bi-people me-2"></i>Name
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg input-soft"
+                                   placeholder="e.g. Travel Buddies" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">
+                                <i class="bi bi-card-text me-2"></i>Description
+                            </label>
+                            <textarea asp-for="Description"
+                                      class="form-control input-soft"
+                                      rows="5"
+                                      placeholder="What is this group about?"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <!-- ACTIONS -->
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-pill">
+                                Cancel
+                            </a>
+
+                            <button type="submit" class="btn btn-primary btn-pill">
+                                <i class="bi bi-check2-circle me-2"></i>Save
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
-    <div class="mb-3">
-        <label class="form-label">Description</label>
-        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
+<style>
+    body {
+        background: #f6efe3;
+    }
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Cancel</a>
-</form>
+    /* Card look identic cu Create/Index */
+    .group-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .group-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
+        }
+
+    .group-card-body {
+        padding: 20px;
+    }
+
+    /* Inputs */
+    .input-soft {
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.10);
+        background: rgba(255,255,255,.92);
+    }
+
+        .input-soft:focus {
+            border-color: rgba(13,110,253,.35);
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.12);
+        }
+
+    /* Buttons */
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>
