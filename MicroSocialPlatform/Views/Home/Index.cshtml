@@ -6,7 +6,6 @@
 }
 
 <div class="container mt-4">
-    <!-- HERO -->
     <div class="hero-card mb-4">
         <div class="text-center mt-4">
             <h1 class="display-4">Welcome to MicroSocialPlatform</h1>
@@ -43,7 +42,7 @@
 
             <div class="feed-slider">
 
-                <!-- FOLLOWING -->
+                <!-- MY FEED -->
                 <div id="followingPanel" class="feed-panel active">
                     @if (!User.Identity.IsAuthenticated)
                     {
@@ -285,7 +284,6 @@
         background: #f6efe3;
     }
 
-    /* HERO */
     .hero-card {
         border-radius: 18px;
         padding: 20px 22px;
@@ -300,7 +298,6 @@
         border-radius: 999px;
     }
 
-    /* FOLLOW SWITCH */
     .follow-switch {
         position: relative;
         display: inline-flex;
@@ -465,7 +462,6 @@
         display: block;
     }
 
-    /* Empty/info */
     .empty-box, .info-box {
         border-radius: 16px;
         background: rgba(255,255,255,.85);
@@ -527,7 +523,6 @@
         text-decoration: none;
     }
 
-    /* BUTTON STYLE (ca in profil) */
     .btn-pill {
         border-radius: 999px !important;
         font-weight: 700;

@@ -22,33 +22,15 @@ namespace MicroSocialPlatform.Controllers
         // LISTA GRUPURI
         public async Task<IActionResult> Index()
         {
-            //var userId = userManager.GetUserId(User);
-
-            //var groups = await db.Groups
-            //    .Include(g => g.Moderator)
-            //    .OrderByDescending(g => g.CreatedAt)
-            //    .ToListAsync();
-
-            //// luam status-ul userului pentru fiecare grup (daca exista)
-            //var myMemberships = await db.GroupMemberships
-            //    .Where(m => m.UserId == userId)
-            //    .Select(m => new { m.GroupId, m.Status })
-            //    .ToListAsync();
-
-            ////GroupId -> Status ("Accepted", "Pending", "Rejected")
-            //ViewBag.MyGroupStatus = myMemberships.ToDictionary(x => x.GroupId, x => x.Status);
-
-            //return View(groups);
 
             var userId = userManager.GetUserId(User);
 
-            // 1) Query de baza (NU ToListAsync inca)
             IQueryable<Group> groupsQuery = db.Groups
                 .Include(g => g.Moderator)
                 .OrderByDescending(g => g.CreatedAt);
 
-            // 2) Paginare
-            int perPage = 6; // alege cat vrei (ex: 6 carduri / pagina)
+            //Paginare
+            int perPage = 6;
             int totalItems = await groupsQuery.CountAsync();
 
             int currentPage = 1;
@@ -69,7 +51,7 @@ namespace MicroSocialPlatform.Controllers
                 .Take(perPage)
                 .ToListAsync();
 
-            // 3) Status-urile userului (ca inainte)
+            // Status-urile userului
             var myMemberships = await db.GroupMemberships
                 .Where(m => m.UserId == userId)
                 .Select(m => new { m.GroupId, m.Status })
@@ -77,7 +59,7 @@ namespace MicroSocialPlatform.Controllers
 
             ViewBag.MyGroupStatus = myMemberships.ToDictionary(x => x.GroupId, x => x.Status);
 
-            // 4) Date pentru paginare (pentru view)
+            // Date pentru paginare (pentru view)
             ViewBag.CurrentPage = currentPage;
             ViewBag.LastPage = lastPage;
             ViewBag.PaginationBaseUrl = "/Groups/Index?page";
@@ -85,7 +67,6 @@ namespace MicroSocialPlatform.Controllers
             return View(groups);
 
         }
-
 
         // DETALII GRUP + membri + mesaje + status-ul meu
         public async Task<IActionResult> Details(int id)
@@ -166,7 +147,7 @@ namespace MicroSocialPlatform.Controllers
 
             //scoatem validarea pentru câmpurile care NU vin din form
             ModelState.Remove("ModeratorId");
-            ModelState.Remove("Moderator"); // uneori apare și asta
+            ModelState.Remove("Moderator");
 
             if (!ModelState.IsValid)
                 return View(group);
@@ -278,7 +259,6 @@ namespace MicroSocialPlatform.Controllers
             var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == groupId);
             if (group == null) return NotFound();
 
-            // moderatorul nu "pleaca", el sterge grupul
             if (group.ModeratorId == userId) return Forbid();
 
             var membership = await db.GroupMemberships

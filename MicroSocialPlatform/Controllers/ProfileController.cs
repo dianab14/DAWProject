@@ -75,9 +75,6 @@ public class ProfileController : Controller
 
         if (ProfileImage != null && ProfileImage.Length > 0)
         {
-            // RemoveProfilePhoto = false; // daca se incarca o poza noua, se va sterge oricum mai jos poza veche
-            // deci nu mai are sens sa o inlocuim cu cea default
-
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
             var fileExtension = Path.GetExtension(ProfileImage.FileName).ToLower();
 
@@ -91,13 +88,7 @@ public class ProfileController : Controller
                 return View(input);
             }
 
-            // nume unic fisier
-            /*var fileName = user.Id + fileExtension; // o poza de profil unica pentru fiecare user; se va suprascrie poza anterioara
-                                                    // daca a avut o poza adaugata ce nu era default
-            
-             genera un pop up in visual studio la fiecare suprascriere de fisier*/
-
-            var fileName = Guid.NewGuid().ToString() + fileExtension; // practic 0 coliziuni
+            var fileName = Guid.NewGuid().ToString() + fileExtension; 
 
             var storagePath = Path.Combine(
                 _env.WebRootPath,
@@ -218,7 +209,6 @@ public class ProfileController : Controller
         // AFISARE PAGINATA
         int perPage = 6;
 
-        // page (default 1)
         int currentPage = 1;
         var pageStr = HttpContext.Request.Query["page"].ToString();
         if (!string.IsNullOrWhiteSpace(pageStr) && int.TryParse(pageStr, out var parsed) && parsed > 0)
@@ -291,14 +281,6 @@ public class ProfileController : Controller
         ViewBag.FollowingCount = _db.Follows.Count(f =>
             f.FollowerId == user.Id &&
             f.Status == "Accepted");
-
-        // logica pentru profil privat
-        /* if (user.IsPrivate && !isMyProfile)
-            {
-                ViewBag.IsPrivateView = true;   // afisare limitata 
-                return View(user);
-            }
-        */
 
         bool canViewFullProfile = CanViewFullProfile(user, currentUserId);
 

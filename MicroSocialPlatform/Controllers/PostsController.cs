@@ -36,16 +36,8 @@ namespace MicroSocialPlatform.Controllers
         private string CurrentUserId() => userManager.GetUserId(User);
 
         // FEED - descrescator dupa data
-
         public async Task<IActionResult> Index()
         {
-            //var posts = await db.Posts
-            //    .Include(p => p.User)
-            //    .OrderByDescending(p => p.CreatedAt)
-            //    .ToListAsync();
-
-            //return View(posts);
-
             return RedirectToAction("Index", "Home");
         }
 
@@ -118,7 +110,6 @@ namespace MicroSocialPlatform.Controllers
                 return View();
             }
 
-            // NU SI VIDEO SI IMAGINE
             if (hasImage && hasVideo)
             {
                 ModelState.AddModelError("", "You can upload either an image or a video, not both.");
@@ -129,7 +120,6 @@ namespace MicroSocialPlatform.Controllers
             {
                 var result = await aiModerationService.AnalyzeAsync(content!.Trim());
 
-                // LOGGING
                 db.AiModerationLogs.Add(new AiModerationLog
                 {
                     Content = content!.Trim(),
@@ -237,7 +227,7 @@ namespace MicroSocialPlatform.Controllers
             return View(post);
         }
 
-        // EDIT (POST) - doar owner (editam doar textul, simplu)
+        // EDIT (POST) - doar owner
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, string? content)

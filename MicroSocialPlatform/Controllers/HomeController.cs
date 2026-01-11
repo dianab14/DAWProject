@@ -17,46 +17,6 @@ namespace MicroSocialPlatform.Controllers
             this.db = db;
         }
 
-        //public async Task<IActionResult> Index()
-        //{
-        //    var currentUserId = User.Identity.IsAuthenticated
-        //        ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-        //        : null;
-
-        //    IQueryable<Post> postsQuery = db.Posts
-        //        .Include(p => p.User)
-        //        .OrderByDescending(p => p.CreatedAt);
-
-        //    // GUEST – vede doar postari publice
-        //    if (currentUserId == null)
-        //    {
-        //        postsQuery = postsQuery.Where(p => !p.User.IsPrivate);
-        //    }
-        //    else
-        //    {
-        //        // id-urile userilor pe care ii urmareste (Accepted)
-        //        var followingIds = db.Follows
-        //            .Where(f =>
-        //                f.FollowerId == currentUserId &&
-        //                f.Status == "Accepted")
-        //            .Select(f => f.FollowedId);
-
-        //        postsQuery = postsQuery.Where(p =>
-        //            // propriile postari
-        //            p.UserId == currentUserId ||
-
-        //            // user public
-        //            !p.User.IsPrivate ||
-
-        //            // user privat dar urmarit
-        //            followingIds.Contains(p.UserId)
-        //        );
-        //    }
-
-        //    var posts = await postsQuery.ToListAsync();
-        //    return View(posts);
-        //}
-
         public async Task<IActionResult> Index()
         {
             var currentUserId = User.Identity.IsAuthenticated
@@ -104,7 +64,7 @@ namespace MicroSocialPlatform.Controllers
 
             if (currentUserId == null)
             {
-                followingQuery = followingQuery.Where(p => false); // gol
+                followingQuery = followingQuery.Where(p => false);
             }
             else
             {

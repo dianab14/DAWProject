@@ -113,7 +113,6 @@
         background: #f6efe3;
     }
 
-    /* Card look consistent cu restul proiectului */
     .post-form-card {
         border-radius: 16px;
         background: rgba(255,255,255,.92);
@@ -157,7 +156,6 @@
             box-shadow: 0 10px 18px rgba(0,0,0,.06);
         }
 
-    /* Small hint */
     .hint-box {
         border-radius: 14px;
         background: rgba(13,110,253,.08);
@@ -185,7 +183,6 @@
         const hasImage = imageInput.files && imageInput.files.length > 0;
         const hasVideo = videoInput.files && videoInput.files.length > 0;
 
-        // regula: nu ambele
         if (hasImage) {
             videoInput.disabled = true;
             clearImageBtn.disabled = false;
