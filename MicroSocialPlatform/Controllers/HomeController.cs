@@ -123,6 +123,7 @@ namespace MicroSocialPlatform.Controllers
         }
 
 
+
         public IActionResult Privacy()
         {
             return View();

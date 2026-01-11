@@ -158,6 +158,7 @@ namespace MicroSocialPlatform.Controllers
             if (!isOwner && !isModerator && !isAdmin)
                 return Forbid();
 
+
             var groupId = msg.GroupId;
 
             db.GroupMessages.Remove(msg);

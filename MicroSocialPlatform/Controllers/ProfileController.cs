@@ -44,6 +44,8 @@ public class ProfileController : Controller
         ViewBag.PendingRequestsCount = GetPendingRequestsCount(user.Id);
 
 
+        ViewBag.Posts = posts;
+
         return View(user);
     }
 
