@@ -11,18 +11,18 @@ namespace MicroSocialPlatform.Models
         public bool IsPrivate { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [Required]
+        [Required(ErrorMessage = "The First Name field is required!")]
         [StringLength(50, ErrorMessage = "Max. 50 characters")]
         public string FirstName { get; set; } = null!;
 
-        [Required]
+        [Required(ErrorMessage = "The Last Name field is required!")]
         [StringLength(50, ErrorMessage = "Max. 50 characters")]
         public string LastName { get; set; } = null!;
 
         [Required]
         public string ProfileImagePath { get; set; } = "/images/profiles/default-profile.png";
 
-        [Required]
+        [Required(ErrorMessage = "The Profile Description is required!")]
         [StringLength(100, ErrorMessage = "Max. 100 characters")]
         public string Description { get; set; } = "Hello, I am using MicroSocialPlatform! :)";
 
