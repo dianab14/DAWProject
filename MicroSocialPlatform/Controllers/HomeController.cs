@@ -79,6 +79,7 @@ namespace MicroSocialPlatform.Controllers
 
             IQueryable<Post> discoverQuery = db.Posts
                 .Include(p => p.User)
+                .Where(p => !p.User.IsDeleted)
                 .OrderByDescending(p => p.CreatedAt);
 
             if (currentUserId == null)
@@ -98,6 +99,7 @@ namespace MicroSocialPlatform.Controllers
             // - logat: doar cei urmariti (Accepted) + postarile mele
             IQueryable<Post> followingQuery = db.Posts
                 .Include(p => p.User)
+                .Where(p => !p.User.IsDeleted)
                 .OrderByDescending(p => p.CreatedAt);
 
             if (currentUserId == null)

@@ -90,13 +90,21 @@ namespace MicroSocialPlatform.Controllers
         // DETALII GRUP + membri + mesaje + status-ul meu
         public async Task<IActionResult> Details(int id)
         {
+
+            var userId = userManager.GetUserId(User);
+
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (me == null || me.IsDeleted)
+                return Forbid();
+
+
             var group = await db.Groups
                 .Include(g => g.Moderator)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (group == null) return NotFound();
-
-            var userId = userManager.GetUserId(User);
 
             // status-ul meu in grup (null daca nu am cerere / nu sunt membru)
             var myMembership = await db.GroupMemberships
@@ -114,7 +122,7 @@ namespace MicroSocialPlatform.Controllers
             {
                 pending = await db.GroupMemberships
                     .Include(m => m.User)
-                    .Where(m => m.GroupId == id && m.Status == "Pending")
+                    .Where(m => m.GroupId == id && m.Status == "Pending" && !m.User.IsDeleted)
                     .OrderBy(m => m.RequestedAt)
                     .ToListAsync();
             }

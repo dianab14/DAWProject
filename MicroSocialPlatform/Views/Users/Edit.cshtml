@@ -1,63 +1,168 @@
 ﻿@model MicroSocialPlatform.Models.ApplicationUser
 
+@{
+    ViewData["Title"] = "Edit User";
+}
 
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-<form asp-controller="Users" asp-action="Edit" method="post" asp-route-id="@Model.Id">
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Edit User</h2>
 
-    <i class="bi bi-person"></i>
-    <label asp-for="UserName">UserName</label>
-    <br />
-    <input asp-for="UserName" class="form-control" />
-    <br />
+                <a asp-controller="Users" asp-action="Index"
+                   class="btn btn-outline-secondary btn-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
 
-    <i class="bi bi-envelope"></i>
-    <label asp-for="Email">Email</label>
-    <br />
-    <input asp-for="Email" class="form-control" />
-    <br />
+            <!-- CARD -->
+            <div class="user-card">
+                <div class="user-card-body">
 
-    <i class="bi bi-phone"></i>
-    <label asp-for="PhoneNumber">Phone Number</label>
-    <br />
-    <input asp-for="PhoneNumber" class="form-control" />
-    <br />
+                    <form asp-controller="Users"
+                          asp-action="Edit"
+                          method="post"
+                          asp-route-id="@Model.Id">
 
-    <i class="bi bi-person"></i>
-    <label asp-for="FirstName">First Name</label>
-    <br />
-    <input asp-for="FirstName" class="form-control" />
-    <br />
+                        @Html.AntiForgeryToken()
 
-    <i class="bi bi-person"></i>
-    <label asp-for="LastName">Last Name</label>
-    <br />
-    <input asp-for="LastName" class="form-control" />
-    <br />
+                        <!-- FIRST NAME -->
+                        <div class="form-group mb-3">
+                            <div class="user-row">
+                                <div class="user-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label asp-for="FirstName" class="user-label">
+                                        First Name
+                                    </label>
+                                    <input asp-for="FirstName"
+                                           class="form-control mt-1" />
+                                    <span asp-validation-for="FirstName"
+                                          class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
 
-    <i class="bi bi-card-list"></i>
-    <label>Select the role</label>
-    <br />
- 
+                        <!-- LAST NAME -->
+                        <div class="form-group mb-3">
+                            <div class="user-row">
+                                <div class="user-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label asp-for="LastName" class="user-label">
+                                        Last Name
+                                    </label>
+                                    <input asp-for="LastName"
+                                           class="form-control mt-1" />
+                                    <span asp-validation-for="LastName"
+                                          class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
 
-    <select name="newRole" class="form-control">
+                        <!-- ROLE -->
+                        <div class="form-group mb-4">
+                            <div class="user-row align-items-start">
+                                <div class="user-icon">
+                                    <i class="bi bi-shield-lock"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label class="user-label mb-1">
+                                        Role
+                                    </label>
+                                    <select name="newRole"
+                                            class="form-control mt-1">
+                                        @foreach (var role in ViewBag.AllRoles)
+                                        {
+                                            <option value="@role.Value"
+                                                    selected="@(ViewBag.UserRole == role.Value)">
+                                                @role.Text
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-        @foreach (var role in ViewBag.AllRoles)
-        {
-            @if (ViewBag.UserRole == role.Value)
-           {
-                <option selected="selected" value="@role.Value">@role.Text</option>
-           }
-           else
-           {
-                <option value="@role.Value">@role.Text</option>
-           }
+                        <!-- ACTION -->
+                        <div class="d-flex justify-content-end">
+                            <button type="submit"
+                                    class="btn btn-success btn-pill">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Save changes
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background: #f6efe3;
+    }
+
+    .user-card {
+        border-radius: 16px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid rgba(0,0,0,.06);
+        box-shadow: 0 10px 26px rgba(0,0,0,.06);
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .user-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 34px rgba(0,0,0,.08);
         }
-    </select>
 
-    <button type="submit" class="btn btn-sm btn-success">Edit user</button>
+    .user-card-body {
+        padding: 20px;
+    }
 
-</form>
+    .user-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
+    .user-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d6efd;
+        background: rgba(13,110,253,.12);
+        flex: 0 0 auto;
+        font-size: 1.05rem;
+    }
 
+    .user-label {
+        font-weight: 800;
+        color: #111827;
+        line-height: 1.1;
+    }
 
+    .btn-pill {
+        border-radius: 999px !important;
+        font-weight: 700;
+        padding: .45rem .9rem;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
 
+        .btn-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,0,0,.06);
+        }
+</style>

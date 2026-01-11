@@ -24,16 +24,28 @@ namespace MicroSocialPlatform.Controllers
 
         private string CurrentUserId() => userManager.GetUserId(User);
 
+
         // CREATE comment (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(int postId, string content)
         {
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot post comments.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Show", "Posts", new { id = postId });
+
+            }
+
             if (string.IsNullOrWhiteSpace(content))
                 return RedirectToAction("Show", "Posts", new { id = postId });
 
             // verificam ca postarea exista
-            var postExists = await db.Posts.AnyAsync(p => p.Id == postId);
+            var postExists = await db.Posts.AnyAsync(p => p.Id == postId && !p.User.IsDeleted);
             if (!postExists) return NotFound();
 
             var comment = new Comment
@@ -87,6 +99,16 @@ namespace MicroSocialPlatform.Controllers
             var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
             if (comment == null) return NotFound();
 
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot edit comments.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Show", "Posts", new { id = comment.PostId });
+            }
+
             if (comment.UserId != CurrentUserId()) return Forbid();
 
             return View(comment);
@@ -99,6 +121,17 @@ namespace MicroSocialPlatform.Controllers
         {
             var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
             if (comment == null) return NotFound();
+
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot edit comments.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Show", "Posts", new { id = comment.PostId });
+            }
+
 
             if (comment.UserId != CurrentUserId()) return Forbid();
 
@@ -146,6 +179,16 @@ namespace MicroSocialPlatform.Controllers
         {
             var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
             if (comment == null) return NotFound();
+
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot delete comments.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Show", "Posts", new { id = comment.PostId });
+            }
 
             bool isAdmin = User.IsInRole("Admin");
             if (comment.UserId != CurrentUserId() && !isAdmin) return Forbid();

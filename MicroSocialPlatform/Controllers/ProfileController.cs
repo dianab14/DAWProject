@@ -234,7 +234,7 @@ public class ProfileController : Controller
         var paginatedUsers = users.Skip(offset).Take(perPage).ToList();
 
         ViewBag.CurrentPage = currentPage;
-        ViewBag.lastPage = lastPage; // IMPORTANT: int, nu double
+        ViewBag.lastPage = lastPage;
         ViewBag.Users = paginatedUsers;
 
         if (!string.IsNullOrWhiteSpace(text))
@@ -332,7 +332,11 @@ public class ProfileController : Controller
         if (existingFollow != null) // deja am la follow / am dat request
             return RedirectToAction("Show", new { id });
 
-        var followedUser = _db.Users.First(u => u.Id == id); // obtin userul care urmeaza sa fie urmarit
+        var followedUser = _db.Users
+            .FirstOrDefault(u => u.Id == id && !u.IsDeleted); // obtin userul care urmeaza sa fie urmarit
+
+        if (followedUser == null)
+            return NotFound();
 
         var follow = new Follow
         {
@@ -390,11 +394,16 @@ public class ProfileController : Controller
     {
         var currentUserId = _userManager.GetUserId(User); // obtin id-ul userului logat
 
+        var me = _db.Users.FirstOrDefault(u => u.Id == currentUserId);
+        if (me == null || me.IsDeleted)
+            return Forbid();
+
         var requests = _db.Follows // obtin cererile de follow primite (si neacceptate inca)
             .Where(f =>
                 f.FollowedId == currentUserId &&
                 f.Status == "Pending")
             .Include(f => f.Follower)
+            .Where(f => !f.Follower.IsDeleted)
             .OrderByDescending(f => f.RequestedAt)
             .ToList();
 
@@ -466,6 +475,7 @@ public class ProfileController : Controller
         var followers = _db.Follows
             .Where(f => f.FollowedId == user.Id && f.Status == "Accepted")
             .Include(f => f.Follower)
+            .Where(f => !f.Follower.IsDeleted)
             .Select(f => f.Follower)
             .ToList();
 
@@ -497,6 +507,7 @@ public class ProfileController : Controller
         var following = _db.Follows
             .Where(f => f.FollowerId == user.Id && f.Status == "Accepted")
             .Include(f => f.Followed)
+            .Where(f => !f.Followed.IsDeleted)
             .Select(f => f.Followed)
             .ToList();
 
@@ -561,26 +572,41 @@ public class ProfileController : Controller
     [NonAction]
     private int GetFollowersCount(string userId)
     {
-        return _db.Follows.Count(f =>
-            f.FollowedId == userId &&
-            f.Status == "Accepted");
+        return _db.Follows
+            .Include(f => f.Follower)
+            .Count(f =>
+                f.FollowedId == userId &&
+                f.Status == "Accepted" &&
+                !f.Follower.IsDeleted
+            );
     }
+
 
     [NonAction]
     private int GetFollowingCount(string userId)
     {
-        return _db.Follows.Count(f =>
-            f.FollowerId == userId &&
-            f.Status == "Accepted");
+        return _db.Follows
+            .Include(f => f.Followed)
+            .Count(f =>
+                f.FollowerId == userId &&
+                f.Status == "Accepted" &&
+                !f.Followed.IsDeleted
+            );
     }
+
 
     [NonAction]
     private int GetPendingRequestsCount(string userId)
     {
-        return _db.Follows.Count(f =>
-            f.FollowedId == userId &&
-            f.Status == "Pending");
+        return _db.Follows
+            .Include(f => f.Follower)
+            .Count(f =>
+                f.FollowedId == userId &&
+                f.Status == "Pending" &&
+                !f.Follower.IsDeleted
+            );
     }
+
 
     [NonAction]
     private bool CanViewFullProfile(ApplicationUser profileUser, string currentUserId)

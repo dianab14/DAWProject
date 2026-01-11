@@ -22,6 +22,14 @@ namespace MicroSocialPlatform.Controllers
 
         private string CurrentUserId() => userManager.GetUserId(User);
 
+        private async Task<ApplicationUser?> CurrentUser()
+        {
+            var id = CurrentUserId();
+            if (id == null) return null;
+            ApplicationUser? applicationUser = await userManager.Users.FirstOrDefaultAsync(u => u.Id == id);
+            return applicationUser;
+        }
+
         private async Task<bool> IsAcceptedMember(int groupId, string userId)
         {
             return await db.GroupMemberships.AnyAsync(m =>
@@ -37,6 +45,13 @@ namespace MicroSocialPlatform.Controllers
         {
             var userId = CurrentUserId();
 
+            var me = await CurrentUser();
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot send messages.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Details", "Groups", new { id = groupId });
+            }
             // validare minima
             if (string.IsNullOrWhiteSpace(content))
                 return RedirectToAction("Details", "Groups", new { id = groupId });
@@ -62,6 +77,10 @@ namespace MicroSocialPlatform.Controllers
         // EDIT MESSAGE (GET) - afiseaza formular
         public async Task<IActionResult> Edit(int id)
         {
+            var me = await CurrentUser();
+            if (me == null || me.IsDeleted)
+                return Forbid();
+
             var msg = await db.GroupMessages.FirstOrDefaultAsync(m => m.Id == id);
             if (msg == null) return NotFound();
 
@@ -81,6 +100,10 @@ namespace MicroSocialPlatform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, GroupMessage formMsg)
         {
+            var me = await CurrentUser();
+            if (me == null || me.IsDeleted)
+                return Forbid();
+
             var msg = await db.GroupMessages.FirstOrDefaultAsync(m => m.Id == id);
             if (msg == null) return NotFound();
 
@@ -109,6 +132,10 @@ namespace MicroSocialPlatform.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            var me = await CurrentUser();
+            if (me == null || me.IsDeleted)
+                return Forbid();
+
             var msg = await db.GroupMessages.FirstOrDefaultAsync(m => m.Id == id);
             if (msg == null) return NotFound();
 

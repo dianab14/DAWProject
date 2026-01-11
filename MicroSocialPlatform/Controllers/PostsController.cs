@@ -1,4 +1,5 @@
 ﻿using MicroSocialPlatform.Data;
+using MicroSocialPlatform.Migrations;
 using MicroSocialPlatform.Models;
 using MicroSocialPlatform.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -53,7 +54,7 @@ namespace MicroSocialPlatform.Controllers
         {
             var post = await db.Posts
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && !p.User.IsDeleted);
 
             if (post == null) return NotFound();
 
@@ -100,7 +101,12 @@ namespace MicroSocialPlatform.Controllers
 
             // user activ
             var me = await userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (me == null || me.IsDeleted) return Forbid();
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot create posts.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
 
             bool hasText = !string.IsNullOrWhiteSpace(content);
             bool hasImage = image != null && image.Length > 0;
@@ -217,6 +223,15 @@ namespace MicroSocialPlatform.Controllers
             var post = await db.Posts.FirstOrDefaultAsync(p => p.Id == id);
             if (post == null) return NotFound();
 
+            var me = await userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot edit posts.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
             if (post.UserId != CurrentUserId()) return Forbid();
 
             return View(post);
@@ -229,6 +244,14 @@ namespace MicroSocialPlatform.Controllers
         {
             var post = await db.Posts.FirstOrDefaultAsync(p => p.Id == id);
             if (post == null) return NotFound();
+
+            var me = await userManager.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot edit posts.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
 
             if (post.UserId != CurrentUserId()) return Forbid();
 
@@ -279,6 +302,14 @@ namespace MicroSocialPlatform.Controllers
 
             if (post.UserId != CurrentUserId() && !isAdmin) return Forbid();
 
+            var me = await userManager.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId());
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot delete posts.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
+
             // stergem fisierele daca exista
             if (!string.IsNullOrEmpty(post.ImagePath))
             {
@@ -305,10 +336,20 @@ namespace MicroSocialPlatform.Controllers
         {
             var userId = CurrentUserId();
 
+            var me = await userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (me == null || me.IsDeleted)
+            {
+                TempData["message"] = "Your account is deactivated. You cannot react to posts.";
+                TempData["messageType"] = "warning";
+                return RedirectToAction("Index", "Home");
+            }
+
             if (!AllowedReactions.Contains(type))
                 return BadRequest("Invalid reaction type");
 
-            var postExists = await db.Posts.AnyAsync(p => p.Id == postId);
+            var postExists = await db.Posts
+                .AnyAsync(p => p.Id == postId && !p.User.IsDeleted);
+
             if (!postExists) return NotFound();
 
             var reaction = await db.Reactions

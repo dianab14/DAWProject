@@ -29,3 +29,30 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+.auth-card {
+    border-radius: 18px;
+    padding: 22px;
+    background: rgba(255,255,255,.92);
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 12px 30px rgba(0,0,0,.08);
+}
+
+.auth-input {
+    border-radius: 12px;
+    padding: .6rem .75rem;
+}
+
+.auth-btn {
+    margin-top: 4px;
+}
+
+/* reuse din Home */
+.hero-divider {
+    height: 1px;
+    background: rgba(0,0,0,.06);
+    border-radius: 999px;
+}
+
+body {
+    background: #f6efe3;
+}

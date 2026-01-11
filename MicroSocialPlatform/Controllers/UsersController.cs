@@ -32,17 +32,22 @@ namespace ArticlesApp.Controllers
         public IActionResult Index()
         {
             var users = db.Users
-                .Where(u => !u.IsDeleted)
+                // .Where(u => !u.IsDeleted)
                 .OrderBy(u => u.UserName);
 
             ViewBag.UsersList = users;
 
+            var currentUserId = _userManager.GetUserId(User);
+            ViewBag.CurrentUserId = currentUserId;
+
+
             return View();
         }
 
-        public async Task<IActionResult> ShowAsync(string id)
+        public async Task<IActionResult> Show(string id)
         {
-            ApplicationUser? user = db.Users.Find(id);
+            var user = await _userManager.FindByIdAsync(id);
+
 
             if (user is null)
             {
@@ -51,7 +56,9 @@ namespace ArticlesApp.Controllers
 
             if (user.IsDeleted)
             {
-                return NotFound();
+                TempData["message"] = "This user account is deactivated and cannot be viewed.";
+                TempData["messageType"] = "error";
+                return RedirectToAction("Index");
             }
 
             else
@@ -60,7 +67,7 @@ namespace ArticlesApp.Controllers
 
                 ViewBag.Roles = roles;
 
-                ViewBag.UserCurent = await _userManager.GetUserAsync(User);
+                ViewBag.UserCurrent = await _userManager.GetUserAsync(User);
 
                 return View(user);
             }
@@ -68,87 +75,99 @@ namespace ArticlesApp.Controllers
 
         public async Task<ActionResult> Edit(string id)
         {
-            ApplicationUser? user = db.Users.Find(id);
+            var user = await _userManager.FindByIdAsync(id);
 
-            if (user is null)
-            {
+
+            if (user == null)
                 return NotFound();
-            }
 
             if (user.IsDeleted)
             {
-                return NotFound();
+                TempData["message"] = "You cannot edit a deactivated user account.";
+                TempData["messageType"] = "error";
+                return RedirectToAction("Index");
             }
 
-            else
+            ViewBag.AllRoles = GetAllRoles();
+
+            var roleNames = await _userManager.GetRolesAsync(user); // lista de nume de roluri
+
+            ViewBag.UserRole = _roleManager.Roles // cautam rolul in vaza de date
+                .Where(r => roleNames.Contains(r.Name))
+                .Select(r => r.Id)
+                .FirstOrDefault();
+
+            return View(user);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Edit(string id, ApplicationUser newData, [FromForm] string newRole)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+                return NotFound();
+
+            if (user.IsDeleted)
+            {
+                TempData["message"] = "You cannot modify a deactivated user account.";
+                TempData["messageType"] = "error";
+                return RedirectToAction("Index");
+            }
+
+
+            // VALIDARE DOAR CE CONTEAZA
+            if (string.IsNullOrWhiteSpace(newData.FirstName) ||
+                string.IsNullOrWhiteSpace(newData.LastName))
+            {
+                ModelState.AddModelError("", "First name and last name are required.");
+            }
+
+            if (!ModelState.IsValid)
             {
                 ViewBag.AllRoles = GetAllRoles();
-
-                var roleNames = await _userManager.GetRolesAsync(user); // Lista de nume de roluri
-
-                // Cautam ID-ul rolului in baza de date
-                ViewBag.UserRole = _roleManager.Roles
-                                                  .Where(r => roleNames.Contains(r.Name))
-                                                  .Select(r => r.Id)
-                                                  .First(); // Selectam 1 singur rol
-
+                ViewBag.UserRole = newRole;
                 return View(user);
             }
 
-        }
+            // ✅ DOAR CAMPURI PERMISE
+            user.FirstName = newData.FirstName.Trim();
+            user.LastName = newData.LastName.Trim();
 
-        [HttpPost]
-        public async Task<ActionResult> EditAsync(string id, ApplicationUser newData, [FromForm] string newRole)
-        {
-            ApplicationUser? user = db.Users.Find(id);
+            // 🔁 UPDATE ROLE
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
-            if (user is null)
+            var role = await _roleManager.FindByIdAsync(newRole);
+            if (role != null)
             {
-                return NotFound();
+                await _userManager.AddToRoleAsync(user, role.Name!);
             }
 
-            else
-            {
+            await db.SaveChangesAsync();
 
-                if (ModelState.IsValid)
-                {
-                    user.UserName = newData.UserName;
-                    user.Email = newData.Email;
-                    user.FirstName = newData.FirstName;
-                    user.LastName = newData.LastName;
-                    user.PhoneNumber = newData.PhoneNumber;
+            TempData["message"] = "User updated successfully.";
+            TempData["messageType"] = "success";
 
-                    // Cautam toate rolurile din baza de date
-                    var roles = db.Roles.ToList();
-
-                    foreach (var role in roles)
-                    {
-                        // Scoatem userul din rolurile anterioare
-                        await _userManager.RemoveFromRoleAsync(user, role.Name);
-                    }
-
-                    // Adaugam noul rol selectat
-                    var roleName = await _roleManager.FindByIdAsync(newRole);
-                    await _userManager.AddToRoleAsync(user, roleName.ToString());
-
-                    db.SaveChanges();
-
-                }
-
-                user.AllRoles = GetAllRoles();
-                return RedirectToAction("Index");
-            }
+            return RedirectToAction("Index");
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> DeleteAsync(string id)
+        public async Task<IActionResult> Delete(string id)
         {
 
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
+            }
+
+            if (user.Id == _userManager.GetUserId(User))
+            {
+                TempData["message"] = "You cannot deactivate your own account.";
+                TempData["messageType"] = "error";
+                return RedirectToAction("Index");
             }
 
             // soft delete
@@ -159,11 +178,36 @@ namespace ArticlesApp.Controllers
             user.LockoutEnd = DateTimeOffset.MaxValue;
 
             await _userManager.UpdateAsync(user);
-
+            TempData["message"] = "User deactivated successfully.";
+            TempData["messageType"] = "success";
             return RedirectToAction("Index");
 
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Reactivate(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            if (user.Id == _userManager.GetUserId(User))
+            {
+                TempData["message"] = "You cannot reactivate your own account.";
+                TempData["messageType"] = "error";
+                return RedirectToAction("Index");
+            }
+
+
+            user.IsDeleted = false;
+            user.LockoutEnd = null;
+
+            await _userManager.UpdateAsync(user);
+
+            TempData["message"] = "User reactivated successfully.";
+            TempData["messageType"] = "success";
+
+            return RedirectToAction("Index");
+        }
 
         [NonAction]
         public IEnumerable<SelectListItem> GetAllRoles()

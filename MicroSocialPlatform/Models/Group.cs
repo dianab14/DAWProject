@@ -8,7 +8,7 @@ namespace MicroSocialPlatform.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "This group must have a name!")]
-        [StringLength(50,ErrorMessage = "Max. 50 characters") ]
+        [StringLength(50, ErrorMessage = "Max. 50 characters")]
         public string Name { get; set; }
 
         [Required(ErrorMessage = "This group must have a description!")]
