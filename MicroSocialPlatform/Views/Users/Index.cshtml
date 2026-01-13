@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Users";
     var users = ViewBag.UsersList as IEnumerable<MicroSocialPlatform.Models.ApplicationUser> ?? Enumerable.Empty<MicroSocialPlatform.Models.ApplicationUser>();
+    var currentUserId = ViewBag.CurrentUserId as string;
+
 }
 
 <div class="container mt-4">
@@ -51,6 +53,28 @@
                                     </div>
                                 </div>
 
+                                <div class="user-divider"></div>
+
+                                <div class="user-line">
+                                    <span class="user-icon">
+                                        <i class="bi bi-circle-fill"></i>
+                                    </span>
+                                    <div>
+                                        <div class="user-label">Status</div>
+                                        <div class="user-value">
+                                            @if (user.IsDeleted)
+                                            {
+                                                <span class="badge bg-danger">Deactivated</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 @if (!string.IsNullOrWhiteSpace(user.FirstName))
                                 {
                                     <div class="user-divider"></div>
@@ -88,22 +112,62 @@
                                 }
                             </div>
 
-                            <!-- ACTIONS -->
-                            <div class="mt-auto pt-3 d-flex justify-content-end gap-2">
-                                <a asp-controller="Users"
-                                   asp-action="Edit"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-sm btn-outline-success btn-pill">
-                                    <i class="bi bi-pencil-square me-1"></i>Edit
-                                </a>
+                            <!-- ACTIONS (mereu jos) -->
 
-                                <a asp-controller="Users"
-                                   asp-action="Show"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-sm btn-primary btn-pill">
-                                    <i class="bi bi-eye me-1"></i>View
-                                </a>
+                            <div class="mt-auto pt-3 d-flex justify-content-end gap-2">
+                                @if (!user.IsDeleted)
+                                {
+                                    <a asp-controller="Users"
+                                       asp-action="Show"
+                                       asp-route-id="@user.Id"
+                                       class="btn btn-sm btn-primary btn-pill">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+
+                                    <a asp-controller="Users"
+                                       asp-action="Edit"
+                                       asp-route-id="@user.Id"
+                                       class="btn btn-sm btn-outline-success btn-pill">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
+                                    </a>
+                                }
+                                @if (user.Id != currentUserId)
+                                {
+                                    @if (!user.IsDeleted)
+                                    {
+                                        <form asp-controller="Users"
+                                              asp-action="Delete"
+                                              asp-route-id="@user.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Deactivate this user?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger btn-pill">
+                                                <i class="bi bi-trash me-1"></i>Deactivate
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Users"
+                                              asp-action="Reactivate"
+                                              asp-route-id="@user.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Reactivate this user?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-success btn-pill">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Reactivate
+                                            </button>
+                                        </form>
+                                    }
+                                }
                             </div>
+
 
                         </div>
                     </div>

@@ -115,6 +115,8 @@ namespace ArticlesApp.Controllers
                 return RedirectToAction("Index");
             }
 
+
+            // VALIDARE DOAR CE CONTEAZA
             if (string.IsNullOrWhiteSpace(newData.FirstName) ||
                 string.IsNullOrWhiteSpace(newData.LastName))
             {
@@ -128,9 +130,11 @@ namespace ArticlesApp.Controllers
                 return View(user);
             }
 
+            // ✅ DOAR CAMPURI PERMISE
             user.FirstName = newData.FirstName.Trim();
             user.LastName = newData.LastName.Trim();
 
+            // 🔁 UPDATE ROLE
             var currentRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentRoles);
 

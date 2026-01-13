@@ -71,27 +71,6 @@
                         </div>
                     }
 
-                    <!-- ACTIONS -->
-                    @if (!isSameUser)
-                    {
-                        <div class="user-divider"></div>
-
-                        <div class="d-flex justify-content-end mt-3">
-                            <form asp-controller="Users"
-                                  asp-action="Delete"
-                                  method="post"
-                                  asp-route-id="@Model.Id"
-                                  class="m-0"
-                                  onsubmit="return confirm('Are you sure you want to delete this user?');">
-                                @Html.AntiForgeryToken()
-
-                                <button type="submit" class="btn btn-outline-danger btn-pill">
-                                    <i class="bi bi-trash me-2"></i>Delete User
-                                </button>
-                            </form>
-                        </div>
-                    }
-
                 </div>
             </div>
 
